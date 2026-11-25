@@ -1,9 +1,9 @@
 # TapeTape 大附件签名后台
 
-App 发超过约 170 KB 的图片、视频、文件时，要先把加密后的文件分块传到 TapeRelay 节点。每次上传都要电路的签名，这个后台替 App 签：
+App 发超过约 170 KB 的图片、视频、文件时，要先把加密后的文件分块传到 TapeRelay 中继网关的通信节点。每次上传都要电路的签名，这个后台替 App 签：
 
-- `GET /api/relay/sign` → `{ account, servers }`：电路名和存文件用的节点。
-- `POST /api/relay/sign`：App 用自己的身份签名请求（请求头 `TR-Account`、`TR-Timestamp`、`TR-Nonce`、`TR-Signature`），后台核对身份、拒绝重放、按天限额（默认每个账号每天 1 GiB，一个对象按 1 MiB 计），再用开发者密钥签上传和认领请求。只签发往电路自己节点的上传、认领请求。
+- `GET /api/relay/sign` → `{ account, servers }`：电路名和存文件用的通信节点。
+- `POST /api/relay/sign`：App 用自己的身份签名请求（请求头 `TR-Account`、`TR-Timestamp`、`TR-Nonce`、`TR-Signature`），后台核对身份、拒绝重放、按天限额（默认每个账号每天 1 GiB，一个对象按 1 MiB 计），再用开发者密钥签上传和认领请求。只签发往电路自己通信节点的上传、认领请求。
 
 开发者密钥只从环境变量 `TAPERELAY_KEY` 读，不写日志，不回给调用方。
 

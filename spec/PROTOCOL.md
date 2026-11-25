@@ -7,14 +7,14 @@
 | 项 | 规则 |
 |---|---|
 | 钱包 | BIP-39 助记词（12 词），路径 `m/44'/60'/0'/0/0` 得到 secp256k1 私钥 `sk`、地址 `0x…`。同一个地址用于 X Layer、BSC 等 EVM 链 |
-| 消息身份 | `key:<0x地址小写>@<节点主机>:4246`，节点在注册时直接读链选取：X Layer 上 TapeRelayDirectory（`0x45e1a892ec4b9db3f0206e4b8c1f09f7a8f67a5b`）列出的、质押合约 `inGoodStanding` 为真的运营方的 `主机:4246`，再要求节点自己的 `/v1/info` 写的运营方编号（`operator.ids["eip155:196"]`）与链上一致、并支持 `self-id`，访问得到即在线。不经过任何中心目录服务（core `directory.rs`） |
+| 消息身份 | `key:<0x地址小写>@<通信节点主机>:4246`，通信节点在注册时直接读链选取：X Layer 上的链上网关注册表 TapeRelayDirectory（`0x45e1a892ec4b9db3f0206e4b8c1f09f7a8f67a5b`）列出的、质押合约 `inGoodStanding` 为真的运营方的 `主机:4246`，再要求通信节点自己的 `/v1/info` 写的运营方编号（`operator.ids["eip155:196"]`）与链上一致、并支持 `self-id`，访问得到即在线。不经过任何中心目录服务（core `directory.rs`） |
 | 加密密钥 | x25519 私钥 = `SHA256("tapetape/x25519/v1" ‖ sk)`；公钥用 TapeRelay「发布自己的密钥」接口发布，对方按身份读取 |
-| 单设备 | 一个身份只在一台设备上收消息（节点上的消息取走即删） |
+| 单设备 | 一个身份只在一台设备上收消息（通信节点上的消息取走即删） |
 
 ## 2. 传输层（TapeRelay）
 
 - 发：`POST /v1/outbox`，正文是 TapeRelay inline 密封消息（对收件人加密，密封后 ≤ 4096 字节，明文上限 `MAX_INLINE_PLAINTEXT`）。
-- 收：SSE 实时推送 + 定时拉收件箱；处理完标已读（节点随即删除）。
+- 收：SSE 实时推送 + 定时拉收件箱；处理完标已读（通信节点随即删除）。
 - 投递状态：查发件箱，`delivered` / `failed`（原因如 `sender-not-allowed`）。
 - 陌生人规则：对方没把我加进允许名单时，只有第一条能到。加好友握手（§6）后双方互相加入允许名单。
 
@@ -37,7 +37,7 @@
 附件超过 170 KiB 时，文件本身不进消息：
 
 1. 发送方把原始文件做成 TapeRelay 加密文件（`plan_encrypted_file`，`from` = 后台电路账号），收件人 = 自己 + 全部收件人（群 = 全体成员）。每个信封最多 16 个公钥（自己 + 15 人），人多就为同一个文件多做几个信封。
-2. 对象（index、chunks、信封）上传到电路的服务器：`GET <后台>/api/relay/sign` 拿 `{account, servers}`；`POST <后台>/api/relay/sign`（请求头用发送方身份签名，`server = "tapetape-backend"`）换取每个对象的上传签名；`POST https://<server>/v1/objects`。至少 2 台服务器存好才算成功。
+2. 对象（index、chunks、信封）上传到电路的通信节点：`GET <后台>/api/relay/sign` 拿 `{account, servers}`；`POST <后台>/api/relay/sign`（请求头用发送方身份签名，`server = "tapetape-backend"`）换取每个对象的上传签名；`POST https://<server>/v1/objects`。至少 2 台通信节点存好才算成功。
 3. 消息照常是 `media` 信封，`blob` 为空，多一个字段 `ref` = 引用的 base64url（无填充）：
 
    ```
@@ -45,9 +45,9 @@
    ```
 
    `size` 是文件的真实字节数；`w`/`h`/`dur`/`fname`/`text` 和普通附件一样，所以收方马上能显示占位卡片。
-4. 收方按 `ref` 从任一服务器取信封（`GET /v1/objects/<sha256 hex>`），找到能解开的那个，再取 index 和 chunks，逐个核对哈希后解密。是否自动下载由收方的「自动下载」设置决定。
+4. 收方按 `ref` 从任一通信节点取信封（`GET /v1/objects/<sha256 hex>`），找到能解开的那个，再取 index 和 chunks，逐个核对哈希后解密。是否自动下载由收方的「自动下载」设置决定。
 
-服务器名只允许小写字母、数字、`.`、`-` 加端口；引用最多 8 台服务器。文件上限 100 MiB。
+通信节点名只允许小写字母、数字、`.`、`-` 加端口；引用最多 8 台通信节点。文件上限 100 MiB。
 
 ## 4. 信封
 
@@ -142,12 +142,12 @@
 ## 7. 资料与已读
 
 - 昵称随每条消息的 `name` 同步；头像变更时发 `profile`。
-- 消息状态：发出中 → 已发出（节点收下）→ 已送达（发件箱 `delivered`）→ 已读（收到 `read`）→ 失败（发件箱 `failed`，显示原因）。
+- 消息状态：发出中 → 已发出（通信节点收下）→ 已送达（发件箱 `delivered`）→ 已读（收到 `read`）→ 失败（发件箱 `failed`，显示原因）。
 
 ## 8. 安全
 
 - 接收时 `from` 必须等于 TapeRelay 验证的发件人；群消息的发送者必须是当前成员。
 - `blob` 大小、分片数、JSON 长度都有上限（JSON ≤ 128 KiB，内联 `blob` ≤ 170 KiB，解压后的内层 ≤ 4 + 128 KiB + 170 KiB，分片 ≤ 128，大附件 ≤ 100 MiB）。超限的消息整条丢弃。
-- 大附件只从接收方自己配置的后台给出的服务器列表里下载，引用里的其他服务器不连。
+- 大附件只从接收方自己配置的后台给出的通信节点列表里下载，引用里的其他通信节点不连。
 - `redpacket_claim` 要在链上 `getClaimRecords` 里查到发送者地址才显示「X 领取了红包」。
 - 链接、文件名只当数据显示，不执行。

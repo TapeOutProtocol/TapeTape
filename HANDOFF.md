@@ -9,16 +9,16 @@
 | `android/` | Compose app，minSdk 26，applicationId `org.tapetape.v2`（开发用，待定） |
 | `spec/` | 规格：`ARCHITECTURE.md`、`PROTOCOL.md`、`CORE-API.md` |
 
-- **消息**：走 TapeRelay 官方节点，免费，不需要电路。**可用。**
-- **大附件**（超过 170 KB 的图片、视频、文件）：**已开通**。签名后台 `files-backend/` 部署在 tapetape.org（电路 105.2.0.tape，节点 relay3、relay5），两端构建配置已填 `https://tapetape.org`，单个文件最大 100 MB。
-- **RPC 中转**：两端读链、发交易先走 `https://tapetape.org/rpc/<链号>`（同一个后台），自有节点地址只在服务器上，失败再用公共节点。tapekit.org 网关也把它当 X Layer 的第三家节点。
+- **消息**：走 TapeRelay 中继网关的官方通信节点，免费，不需要电路。**可用。**
+- **大附件**（超过 170 KB 的图片、视频、文件）：**已开通**。签名后台 `files-backend/` 部署在 tapetape.org（电路 105.2.0.tape，通信节点 relay3、relay5），两端构建配置已填 `https://tapetape.org`，单个文件最大 100 MB。
+- **RPC 中转**：两端读链、发交易先走 `https://tapetape.org/rpc/<链号>`（同一个后台），自有区块链节点地址只在服务器上，失败再用公共区块链节点。tapekit.org 网关也把它当 X Layer 的第三家区块链节点。
 - **钱包**：X Layer（OKB、BEM）+ BSC（BNB、BEM、USDT）。**主网模拟通过，未实测。**
 - **红包 / 转账**：X Layer 和 BSC 上的合约（同一份代码），真正上链，7 天后可退回。**主网模拟通过，未实测。**
 - **链上小店**：卖家自己的钱包在 X Layer 上一键开店。**主网模拟通过，未实测。**
-- **广场**：App 里直接打开 OKX 的 X Layer 黑客松投票页（`https://web3.okx.com/zh-hans/xlayer/hackathon-voting`），不再使用原来的匿名留言板。
-- **节点名单**：注册时直接读 X Layer 上的 TapeRelay 目录合约和质押合约，再逐台核对节点自报的运营方编号，不经过 www.taperelay.com。
+- **广场**：内置 Tapekit 内核的 DeWEB 浏览器，输入 1.2.0 这样的链上名字直接打开链上网站，起始页是链上网站 2.2.0；内置网页钱包（X Layer / BNB Chain），连接、签名、交易都要在 App 自己的弹窗里确认。
+- **通信节点名单**：注册时直接读 X Layer 上的链上网关注册表（TapeRelay 目录合约）和质押合约，再逐台核对通信节点自报的运营方编号，不经过 www.taperelay.com。
 - **和旧版不互通**：v2 的消息格式是新的，旧版 TapeTape / TapeTape Relay 用户收不到 v2 的消息，反过来也一样。聊天记录不迁移。
-- **群最多 500 人（含自己）**：群没有服务器，发一句话手机要给每个成员各发一份，500 人的群每句话要发 500 次。上千人、上万人的群要改架构：成员名单改为增量同步，消息改用群共享密钥只加密一次，由 TapeRelay 节点代为分发（节点要新增这项能力）。
+- **群最多 500 人（含自己）**：群没有服务器，发一句话手机要给每个成员各发一份，500 人的群每句话要发 500 次。上千人、上万人的群要改架构：成员名单改为增量同步，消息改用群共享密钥只加密一次，由 TapeRelay 通信节点代为分发（通信节点要新增这项能力）。
 - **一个身份只能在一台设备上收消息**：同一助记词不要同时登录旧版和 v2，也不要同时登录两台手机。
 
 ## 二、待办
@@ -52,9 +52,9 @@
 
 - 代码：`files-backend/`（Node 22.13+，`npm test`），说明见 `files-backend/README.md`。
 - 服务器：tapetape.org 那台，服务 `tapetape-files`（只听本机 3010），nginx 把 `/api/relay/sign` 和 `/rpc/` 转给它。
-- 更新程序：`bash files-backend/deploy/install-tapetape-org.sh`（不动密钥和节点配置）。
+- 更新程序：`bash files-backend/deploy/install-tapetape-org.sh`（不动密钥和区块链节点配置）。
 - 换电路密钥：控制台下载 .env 后 `scp <文件> ubuntu@tapetape.org:/tmp/k.env && ssh -t ubuntu@tapetape.org sudo /opt/tapetape-files/set-key /tmp/k.env`。
-- 换自有节点：`ssh -t ubuntu@tapetape.org sudo /opt/tapetape-files/set-rpc 196`（BSC 用 56）。
+- 换自有区块链节点：`ssh -t ubuntu@tapetape.org sudo /opt/tapetape-files/set-rpc 196`（BSC 用 56）。
 - 安卓下载固定短链接 https://tapetape.org/apk：跳到 TapeRelay 分享链接（安装包加密存电路 105.2.0.tape 的 relay3/relay5）。发新版：apk 传到服务器 /tmp 后运行 `sudo /opt/tapetape-files/share-file --latest /tmp/<文件>.apk TapeTape-<版本>.apk`，传完自动切换；手动改指向用 `set-apk '<分享链接>'`（指向写在 /etc/nginx/tapetape-apk.conf，上一版留 .prev）。
 - 中转只放行 App 和网关用到的方法，每个 IP 每分钟 600 次、总量每分钟 6000 次；`eth_getLogs` 跨度不超过 1 万块。
 
@@ -140,7 +140,7 @@ cd android && ./gradlew bundleRelease          # 上架
 ```sh
 cd core
 cargo test                                                         # 单元测试
-cargo test -p tapetape-core live_ -- --ignored --nocapture             # 真实节点联测（单聊、群、备份、删除联系人）
+cargo test -p tapetape-core live_ -- --ignored --nocapture             # 真实通信节点联测（单聊、群、备份、删除联系人）
 cargo test -p tapetape-core chain_sim -- --ignored --nocapture         # BSC / X Layer 主网模拟（不发交易）
 cargo test -p tapetape-core live_simulate_shop_open -- --ignored       # 开店主网模拟（不发交易）
 ```
