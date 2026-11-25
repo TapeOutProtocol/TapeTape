@@ -51,16 +51,11 @@
 ### 2. 大附件签名后台与 RPC 中转（已部署）
 
 - 代码：`files-backend/`（Node 22.13+，`npm test`），说明见 `files-backend/README.md`。
-- 服务器：tapetape.org 那台，服务 `tapetape-files`（只听本机 3010），nginx 把 `/api/relay/sign` 和 `/rpc/` 转给它。
-- 更新程序：`bash files-backend/deploy/install-tapetape-org.sh`（不动密钥和区块链节点配置）。
-- 换电路密钥：控制台下载 .env 后 `scp <文件> ubuntu@tapetape.org:/tmp/k.env && ssh -t ubuntu@tapetape.org sudo /opt/tapetape-files/set-key /tmp/k.env`。
-- 换自有区块链节点：`ssh -t ubuntu@tapetape.org sudo /opt/tapetape-files/set-rpc 196`（BSC 用 56）。
-- 安卓下载固定短链接 https://tapetape.org/apk：跳到 TapeRelay 分享链接（安装包加密存电路 105.2.0.tape 的 relay3/relay5）。发新版：apk 传到服务器 /tmp 后运行 `sudo /opt/tapetape-files/share-file --latest /tmp/<文件>.apk TapeTape-<版本>.apk`，传完自动切换；手动改指向用 `set-apk '<分享链接>'`（指向写在 /etc/nginx/tapetape-apk.conf，上一版留 .prev）。
 - 中转只放行 App 和网关用到的方法，每个 IP 每分钟 600 次、总量每分钟 6000 次；`eth_getLogs` 跨度不超过 1 万块。
 
 ### 3. iOS 通用链接（网站运维）
 
-`https://i.tapetape.org/.well-known/apple-app-site-association` 的 `applinks.details` 里加 `"<TEAMID>.org.tapetape.v2"`（包名定了以后换成正式的）。邀请落地页本身已部署在 i.tapetape.org（腾讯云 43.165.171.171，和官网同一台）。不加的话，iOS 上点邀请链接会打开 Safari。
+`https://i.tapetape.org/.well-known/apple-app-site-association` 的 `applinks.details` 里加 `"<TEAMID>.org.tapetape.v2"`（包名定了以后换成正式的）。邀请落地页本身已部署在 i.tapetape.org。不加的话，iOS 上点邀请链接会打开 Safari。
 
 ### 4. 证书与上架（发布负责人）
 

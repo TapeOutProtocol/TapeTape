@@ -24,7 +24,7 @@ TapeTape 是一个以隐匿、安全为第一原则的加密聊天 App，消息�
 | `core/` | Rust 内核 `tapetape-core`（账号、消息、群、钱包、红包、小店、备份、代理、网页钱包），通过 UniFFI 给两端调用；`crates/taperelay/` 是 TapeRelay 协议库 |
 | `android/` | 安卓 App（Jetpack Compose，minSdk 26） |
 | `ios/` | iOS App（SwiftUI，iOS 16+），含分享扩展 |
-| `browser/` | 广场浏览器的内置脚本（Tapekit 内核宿主、网页钱包注入脚本）及安全审计报告 |
+| `browser/` | 广场浏览器的内置脚本（Tapekit 内核宿主、网页钱包注入脚本） |
 | `contracts/` | 红包 / 转账合约（Foundry） |
 | `files-backend/` | 大附件签名与 RPC 中转后台（部署在 tapetape.org） |
 | `spec/` | 规格：架构、消息协议、内核接口 |
