@@ -1,0 +1,4 @@
+build/
+TapeTape.xcodeproj/
+xcuserdata/
+*.xcresult

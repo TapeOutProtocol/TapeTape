@@ -1,0 +1,591 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<title></title>
+<style>
+:root{--bg:#f2f3f5;--card:#fff;--fg:#111827;--fg2:#4b5563;--fg3:#9ca3af;--line:#e5e7eb;--soft:#f6f7f9;--pri:#3b82f6;--red:#ef4444;--redbg:#fef2f2}
+@media (prefers-color-scheme:dark){:root{--bg:#000;--card:#1c1c1e;--fg:#f2f2f7;--fg2:#c7c7cc;--fg3:#8e8e93;--line:#38383a;--soft:#2c2c2e;--red:#f87171;--redbg:#3a1d1d}}
+*{box-sizing:border-box;margin:0;padding:0}
+[hidden]{display:none!important}
+html,body{background:var(--bg)}
+body{color:var(--fg);font:15px/1.5 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;min-height:100vh;-webkit-text-size-adjust:100%;-webkit-tap-highlight-color:transparent;padding:0 env(safe-area-inset-right) 0 env(safe-area-inset-left)}
+a{color:inherit;text-decoration:none}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+img{display:block}
+.ic{width:20px;height:20px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.ic.f{fill:currentColor;stroke:none}
+header{position:sticky;top:0;z-index:5;background:var(--card);border-bottom:1px solid var(--line);padding-top:env(safe-area-inset-top)}
+header a{display:block;height:48px;line-height:48px;padding:0 16px;text-align:center;font-weight:600;font-size:17px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+main{max-width:560px;margin:0 auto;padding:12px 12px calc(88px + env(safe-area-inset-bottom))}
+.app main{padding-top:calc(12px + env(safe-area-inset-top))}
+.box{background:var(--card);border-radius:16px;overflow:hidden}
+.seller{display:flex;align-items:center;gap:12px;padding:14px}
+.av{flex:none;width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,#a855f7,#ec4899);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:600}
+.grow{flex:1;min-width:0}
+.grow b{display:block;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+small{display:block;color:var(--fg3);font-size:13px}
+.pill{display:inline-flex;align-items:center;gap:4px;flex:none;padding:6px 12px;border-radius:999px;background:var(--pri);color:#fff;font-size:13px;font-weight:600}
+.pill .ic{width:16px;height:16px}
+.grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:12px}
+@media (min-width:540px){.grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+.item{display:block;background:var(--card);border-radius:12px;overflow:hidden}
+.sq{width:100%;aspect-ratio:1;object-fit:cover;background:var(--soft)}
+.item>div{padding:8px 10px 10px}
+.item p{font-size:14px;line-height:1.4;height:2.8em;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;word-break:break-word}
+.pr{display:flex;flex-wrap:wrap;align-items:baseline;gap:0 6px;margin-top:6px}
+.pr b{color:var(--red);font-weight:700}
+.pr s{color:var(--fg3);font-size:12px}
+.car{position:relative;background:var(--soft)}
+.track{display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;overscroll-behavior-x:contain}
+.track:empty{aspect-ratio:1}
+.track::-webkit-scrollbar{display:none}
+.track img{flex:0 0 100%;width:100%;aspect-ratio:1;object-fit:contain;scroll-snap-align:start;scroll-snap-stop:always}
+.cnt{position:absolute;right:10px;bottom:10px;padding:1px 9px;border-radius:999px;background:rgba(0,0,0,.5);color:#fff;font-size:12px}
+.thumbs{display:flex;gap:8px;padding:12px 14px 0;overflow-x:auto}
+.thumbs button{flex:none;width:52px;height:52px;border-radius:8px;overflow:hidden;border:2px solid transparent;background:var(--soft)}
+.thumbs .on{border-color:var(--pri)}
+.thumbs img{width:100%;height:100%;object-fit:cover}
+.sec{padding:14px}
+.sec+.sec{padding-top:0}
+h2{font-size:15px;font-weight:600;margin-bottom:8px}
+.desc{white-space:pre-wrap;word-break:break-word;color:var(--fg2);line-height:1.65}
+.pbox{background:var(--soft);border-radius:12px;padding:12px}
+.pbox s{display:block;color:var(--fg3);margin:0 0 8px 2px}
+.pbox>div{background:var(--card);border-radius:10px;padding:10px 12px}
+.big{display:flex;align-items:center;gap:6px;color:var(--red);font-size:21px;font-weight:700;margin-top:2px;word-break:break-all}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:4;background:var(--card);border-top:1px solid var(--line);padding:10px max(16px,env(safe-area-inset-right)) calc(10px + env(safe-area-inset-bottom)) max(16px,env(safe-area-inset-left))}
+.bar>div{display:flex;gap:10px;max-width:536px;margin:0 auto}
+.btn{flex:1;min-width:0;display:inline-flex;align-items:center;justify-content:center;gap:6px;height:46px;padding:0 18px;border-radius:999px;background:var(--pri);color:#fff;font-weight:600}
+.btn span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.btn:active{opacity:.85}
+.btn:disabled{opacity:.5}
+.btn.alt{background:var(--soft);color:var(--fg)}
+.btn.red{background:var(--red)}
+.btn.out{background:none;color:var(--red);box-shadow:inset 0 0 0 1.5px var(--red)}
+.btn.ib{flex:none;width:46px;padding:0}
+.empty{display:flex;flex-direction:column;align-items:center;text-align:center;padding:56px 16px;color:var(--fg3)}
+.empty .ic{width:60px;height:60px;stroke-width:1.5}
+.empty h2{color:var(--fg);font-size:17px;margin:14px 0 4px}
+.empty .btn{flex:none;margin-top:20px}
+.spin{width:28px;height:28px;border-radius:50%;border:3px solid var(--line);border-top-color:var(--pri);animation:r .8s linear infinite}
+main>.spin{margin:96px auto}
+@keyframes r{to{transform:rotate(360deg)}}
+.form{padding:18px 16px}
+.form section+section{margin-top:24px}
+.pics{display:flex;flex-wrap:wrap;gap:10px;padding-top:6px}
+.pic,.add{position:relative;width:80px;height:80px;border-radius:10px}
+.pic img{width:100%;height:100%;object-fit:cover;border-radius:10px}
+.pic button{position:absolute;top:-6px;right:-6px;width:22px;height:22px;border-radius:50%;background:#6b7280;color:#fff;display:flex;align-items:center;justify-content:center}
+.pic .ic{width:12px;height:12px;stroke-width:3}
+.add{display:flex;align-items:center;justify-content:center;border:2px dashed var(--line);color:var(--fg3);cursor:pointer}
+.add .ic{width:30px;height:30px;stroke-width:1.5}
+.add input{display:none}
+.add .spin{width:22px;height:22px}
+.hint{color:var(--fg3);font-size:12px;margin-top:8px}
+.err{color:var(--red);font-size:13px;margin-top:6px}
+.ta{position:relative}
+textarea,input{display:block;width:100%;border:1px solid var(--line);border-radius:12px;background:var(--soft);color:var(--fg);font:inherit;font-size:16px;padding:12px 14px;outline:0;-webkit-appearance:none}
+textarea{resize:none;height:160px;padding-bottom:30px}
+textarea:focus,input:focus{border-color:var(--pri);background:var(--card)}
+.bad{border-color:var(--red)!important}
+.cc{position:absolute;right:12px;bottom:8px;font-size:13px;color:var(--fg3)}
+.cc.over{color:var(--red)}
+.l{display:block;font-size:13px;color:var(--fg2);margin:12px 0 6px}
+h2+.l{margin-top:0}
+.inp{position:relative}
+.inp input{padding-right:66px}
+.inp span{position:absolute;right:14px;top:50%;transform:translateY(-50%);color:var(--pri);font-weight:600}
+.serr{margin-top:20px;padding:10px 12px;border-radius:12px;background:var(--redbg);color:var(--red);font-size:14px;word-break:break-word}
+.form>.btn{width:100%;margin-top:24px}
+.ov{position:fixed;inset:0;z-index:20;display:flex;align-items:center;justify-content:center;padding:24px;background:rgba(0,0,0,.5)}
+.dlg{width:100%;max-width:320px;padding:22px 20px 18px;border-radius:16px;background:var(--card);text-align:center}
+.dlg .spin{margin:4px auto 16px}
+.dlg h3{font-size:17px;margin-bottom:6px}
+.dlg p{color:var(--fg2);font-size:14px}
+.dlg .err{color:var(--red);margin-top:10px}
+.row{display:flex;gap:10px;margin-top:20px}
+.toast{position:fixed;left:50%;bottom:calc(96px + env(safe-area-inset-bottom));z-index:30;transform:translateX(-50%);max-width:calc(100% - 32px);padding:8px 16px;border-radius:999px;background:rgba(0,0,0,.8);color:#fff;font-size:14px;pointer-events:none;opacity:0;transition:opacity .2s}
+.toast.on{opacity:1}
+</style>
+</head>
+<body>
+<header id="hd" hidden><a id="hn" href="/" data-r></a></header>
+<main id="app"></main>
+<div id="busy" class="ov" hidden><div class="dlg"><div class="spin"></div><p></p></div></div>
+<div id="toast" class="toast" role="status"></div>
+<script>
+const zh = /^zh/i.test(navigator.language)
+const T = zh ? {
+  shop: n => n + ' 的小店',
+  seller: '卖家',
+  count: n => n + ' 件商品',
+  add: '加好友',
+  empty: '还没有商品',
+  emptyApp: '点击下方按钮发布第一个商品',
+  detail: '商品详情',
+  publish: '发布商品',
+  nf: '商品不存在或已下架',
+  nfSub: '该商品可能已被删除或链接无效',
+  home: '返回首页',
+  loadFailed: '加载失败，请重试',
+  retry: '重试',
+  info: '介绍商品',
+  priceSec: '商品价格',
+  sale: '实际优惠价',
+  view: i => '查看图片 ' + i,
+  contact: n => '添加' + n + '好友，与他沟通',
+  share: '分享商品',
+  copied: '链接已复制',
+  copyFailed: '复制失败',
+  remove: '下架',
+  rmQ: '确定下架该商品？',
+  rmSub: '下架后买家将无法再看到它',
+  removing: '正在下架，请勿离开…',
+  removed: '已下架',
+  cancel: '取消',
+  images: '商品图片',
+  imgHint: '支持上传 1-5 张图片',
+  imgReq: '请至少上传一张商品图片',
+  imgMax: '最多只能上传 5 张图片',
+  imgFail: '图片处理失败，请换一张',
+  addImg: '添加图片',
+  rmImg: '删除图片',
+  descPh: '描述你的商品详情',
+  descReq: '请输入商品描述',
+  descLong: '描述不能超过 500 字',
+  priceSet: '设置价格',
+  op: '商品报价',
+  dp: '实际优惠价',
+  priceReq: '请输入有效的价格',
+  priceHigh: '优惠价不能高于报价',
+  submit: '确认发布',
+  publishing: '正在上链发布，约需 1 分钟，请勿离开…',
+  pubFail: '发布失败，请重试'
+} : {
+  shop: n => n + "'s Shop",
+  seller: 'Seller',
+  count: n => n + (n === 1 ? ' product' : ' products'),
+  add: 'Add friend',
+  empty: 'No products yet',
+  emptyApp: 'Tap the button below to publish your first product',
+  detail: 'Product Details',
+  publish: 'Publish Product',
+  nf: 'Product not found or has been removed',
+  nfSub: 'This product may have been deleted or the link is invalid',
+  home: 'Back to Home',
+  loadFailed: 'Failed to load, please try again',
+  retry: 'Retry',
+  info: 'Product Info',
+  priceSec: 'Price',
+  sale: 'Sale Price',
+  view: i => 'View image ' + i,
+  contact: n => 'Add ' + n + ' as friend to chat',
+  share: 'Share Product',
+  copied: 'Link copied',
+  copyFailed: 'Copy failed',
+  remove: 'Remove',
+  rmQ: 'Remove this product?',
+  rmSub: 'Buyers will no longer see it.',
+  removing: 'Removing, please stay…',
+  removed: 'Removed',
+  cancel: 'Cancel',
+  images: 'Product Images',
+  imgHint: 'Upload 1-5 images',
+  imgReq: 'Please upload at least one product image',
+  imgMax: 'Maximum 5 images allowed',
+  imgFail: "Couldn't process the image, please try another",
+  addImg: 'Add image',
+  rmImg: 'Remove image',
+  descPh: 'Describe your product details',
+  descReq: 'Please enter product description',
+  descLong: 'Description cannot exceed 500 characters',
+  priceSet: 'Set Price',
+  op: 'List Price',
+  dp: 'Sale Price',
+  priceReq: 'Please enter a valid price',
+  priceHigh: 'Sale price cannot exceed list price',
+  submit: 'Publish',
+  publishing: 'Publishing on-chain, about a minute, please stay…',
+  pubFail: 'Publish failed, please try again'
+}
+
+const P = {
+  share: 'M4 12v7a2 2 0 002 2h12a2 2 0 002-2v-7M16 6l-4-4-4 4M12 2v14',
+  plus: 'M12 5v14M5 12h14',
+  x: 'M6 6l12 12M18 6L6 18',
+  user: 'M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z',
+  tag: 'M21.41 11.58l-9-9C12.05 2.22 11.55 2 11 2H4c-1.1 0-2 .9-2 2v7c0 .55.22 1.05.59 1.42l9 9c.36.36.86.58 1.41.58.55 0 1.05-.22 1.41-.59l7-7c.37-.36.59-.86.59-1.41 0-.55-.23-1.06-.59-1.42zM5.5 7C4.67 7 4 6.33 4 5.5S4.67 4 5.5 4 7 4.67 7 5.5 6.33 7 5.5 7z',
+  sad: 'M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z',
+  box: 'M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4',
+  alert: 'M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L3.732 16.5c-.77.833.192 2.5 1.732 2.5z'
+}
+
+const $ = id => document.getElementById(id)
+const main = $('app'), hd = $('hd'), busyEl = $('busy'), toastEl = $('toast')
+const pending = {}, local = {}
+let data = null, isApp = false, draft = blank(), F = {}, seq = 0, tt
+let mem = {added: [], removed: []}
+try { mem = JSON.parse(sessionStorage.getItem('tapetapeShop')) || mem } catch {}
+const save = () => { try { sessionStorage.setItem('tapetapeShop', JSON.stringify(mem)) } catch {} }
+
+function h(tag, attrs, ...kids) {
+  const e = document.createElement(tag)
+  for (const k in attrs) {
+    const v = attrs[k]
+    if (k.startsWith('on')) e.addEventListener(k.slice(2), v)
+    else if (v != null && v !== false) e.setAttribute(k, v === true ? '' : v)
+  }
+  return add(e, kids)
+}
+
+function add(e, kids) {
+  for (const c of kids.flat(Infinity)) if (c != null && c !== false && c !== '') e.append(c)
+  return e
+}
+
+function icon(n, cls) {
+  const ns = 'http://www.w3.org/2000/svg', s = document.createElementNS(ns, 'svg'), p = document.createElementNS(ns, 'path')
+  s.setAttribute('viewBox', '0 0 24 24')
+  s.setAttribute('class', cls ? 'ic ' + cls : 'ic')
+  s.setAttribute('aria-hidden', 'true')
+  p.setAttribute('d', P[n])
+  s.append(p)
+  return s
+}
+
+const bridge = () => window.webkit?.messageHandlers?.tapetapeShop || window.TapeTapeShopAndroid
+
+window.tapetapeShopReply = (id, result, error) => {
+  const p = pending[id]
+  if (!p) return
+  delete pending[id]
+  error ? p.reject(new Error(error)) : p.resolve(result)
+}
+
+const call = (method, params) => new Promise((resolve, reject) => {
+  const id = ++seq
+  pending[id] = {resolve, reject}
+  bridge().postMessage(JSON.stringify({id, method, params}))
+})
+
+const enc = encodeURIComponent
+const fmt = c => (c / 100).toFixed(2) + ' USDT'
+const len = s => [...s].length
+const name = () => String(data.shop.name || '').trim() || T.seller
+const invite = () => /^https:\/\//.test(data.shop.invite) ? data.shop.invite : null
+const imgs = p => (p.images || []).filter(s => /^\/img\//.test(s))
+const src = s => local[s] || s
+const avatar = () => h('span', {class: 'av'}, [...name()][0].toUpperCase())
+const bar = (...btns) => h('div', {class: 'bar'}, h('div', 0, btns))
+const show = (...nodes) => { main.replaceChildren(); add(main, nodes) }
+
+function list() {
+  const ids = new Set(data.products.map(p => p.id))
+  return mem.added.filter(p => !ids.has(p.id)).concat(data.products).filter(p => !mem.removed.includes(p.id))
+}
+
+function go(path, replace) {
+  history[replace || path === location.pathname ? 'replaceState' : 'pushState'](null, '', path)
+  scrollTo(0, 0)
+  render()
+}
+
+function render() {
+  const path = location.pathname, m = path.match(/^\/p\/([^/]+)\/?$/)
+  isApp = !!bridge()
+  document.body.classList.toggle('app', isApp)
+  hd.hidden = isApp
+  if (path === '/new' && !isApp) return go('/', true)
+  if (!m && path !== '/new' && path !== '/') return go('/', true)
+  if (m) document.title = T.detail
+  else if (path === '/new') document.title = T.publish
+  if (!data) return show(h('div', {class: 'spin'}))
+  $('hn').textContent = T.shop(name())
+  if (!m && path === '/') document.title = T.shop(name())
+  show(m ? detail(m[1]) : path === '/new' ? form() : home())
+}
+
+async function getJSON(url) {
+  const r = await fetch(url, {cache: 'no-store'})
+  if (r.status === 404 && url === '/products.json') return null
+  if (!r.ok) throw new Error(url + ' ' + r.status)
+  return r.json()
+}
+
+async function load() {
+  render()
+  try {
+    const [shop, prods] = await Promise.all([getJSON('/shop.json'), getJSON('/products.json')])
+    data = {shop, products: prods?.products || []}
+    render()
+  } catch (e) {
+    console.error(e)
+    show(h('div', {class: 'empty'}, icon('alert'), h('h2', 0, T.loadFailed), h('button', {class: 'btn', onclick: load}, T.retry)))
+  }
+}
+
+const pic = (s, cls, lazy) => s
+  ? h('img', {class: cls, src: src(s), alt: '', loading: lazy && 'lazy', draggable: 'false'})
+  : h('div', {class: cls})
+
+const prices = p => h('div', {class: 'pr'},
+  h('b', 0, fmt(p.discountPrice)),
+  p.discountPrice < p.originalPrice && h('s', 0, fmt(p.originalPrice)))
+
+const card = p => h('a', {class: 'item', href: '/p/' + enc(p.id), 'data-r': true},
+  pic(imgs(p)[0], 'sq', true),
+  h('div', 0, h('p', 0, p.description), prices(p)))
+
+function home() {
+  const items = list(), inv = invite()
+  return [
+    h('div', {class: 'box seller'}, avatar(),
+      h('div', {class: 'grow'}, h('b', 0, name()), h('small', 0, T.count(items.length))),
+      !isApp && inv && h('button', {class: 'pill', onclick: () => location.href = inv}, icon('user'), T.add)),
+    items.length
+      ? h('div', {class: 'grid'}, items.map(card))
+      : h('div', {class: 'empty'}, icon('box'), h('h2', 0, T.empty), isApp && h('p', 0, T.emptyApp)),
+    isApp && bar(h('a', {class: 'btn', href: '/new', 'data-r': true}, icon('plus'), T.publish))
+  ]
+}
+
+function detail(id) {
+  const p = list().find(x => enc(x.id) === id)
+  if (!p) return h('div', {class: 'empty'}, icon('sad'), h('h2', 0, T.nf), h('p', 0, T.nfSub),
+    h('a', {class: 'btn', href: '/', 'data-r': true}, T.home))
+  const srcs = imgs(p), inv = invite(), many = srcs.length > 1
+  const track = h('div', {class: 'track'}, srcs.map(s => pic(s)))
+  const cnt = h('span', {class: 'cnt'})
+  const thumbs = srcs.map((s, i) => h('button', {type: 'button', 'aria-label': T.view(i + 1),
+    onclick: () => track.scrollTo({left: i * track.clientWidth, behavior: 'smooth'})}, pic(s)))
+  let cur = -1
+  const sel = i => {
+    if (i === cur) return
+    cur = i
+    cnt.textContent = i + 1 + '/' + srcs.length
+    thumbs.forEach((t, j) => t.classList.toggle('on', i === j))
+  }
+  track.addEventListener('scroll', () => sel(Math.round(track.scrollLeft / track.clientWidth)), {passive: true})
+  sel(0)
+  const shareBtn = () => h('button', {class: 'btn', onclick: () => share(p)}, icon('share'), T.share)
+  return [
+    h('div', {class: 'box'},
+      h('a', {class: 'seller', href: '/', 'data-r': true}, avatar(),
+        h('div', {class: 'grow'}, h('b', 0, name()), h('small', 0, new Date(p.createdAt * 1000).toLocaleDateString()))),
+      h('div', {class: 'car'}, track, many && cnt),
+      many && h('div', {class: 'thumbs'}, thumbs),
+      h('div', {class: 'sec'}, h('h2', 0, T.info), h('p', {class: 'desc'}, p.description)),
+      h('div', {class: 'sec'}, h('h2', 0, T.priceSec), h('div', {class: 'pbox'},
+        p.discountPrice < p.originalPrice && h('s', 0, fmt(p.originalPrice)),
+        h('div', 0, h('small', 0, T.sale), h('div', {class: 'big'}, icon('tag', 'f'), fmt(p.discountPrice)))))),
+    isApp
+      ? bar(h('button', {class: 'btn out', onclick: () => confirmRemove(p)}, T.remove), shareBtn())
+      : inv
+        ? bar(h('button', {class: 'btn alt ib', 'aria-label': T.share, onclick: () => share(p)}, icon('share')),
+          h('button', {class: 'btn', onclick: () => location.href = inv}, icon('user'), h('span', 0, T.contact(name()))))
+        : bar(shareBtn())
+  ]
+}
+
+function toast(s) {
+  toastEl.textContent = s
+  toastEl.classList.add('on')
+  clearTimeout(tt)
+  tt = setTimeout(() => toastEl.classList.remove('on'), 2200)
+}
+
+function busy(s) {
+  busyEl.hidden = !s
+  if (s) busyEl.querySelector('p').textContent = s
+}
+
+function share(p) {
+  const url = location.protocol + '//' + location.host.replace(/^([^.:]*)-open(?=[.:]|$)/, '$1') + '/p/' + enc(p.id)
+  const c = [...String(p.description).replace(/\s+/g, ' ').trim()]
+  const text = c.length > 60 ? c.slice(0, 60).join('') + '…' : c.join('')
+  if (isApp) return call('share', {url, text}).catch(e => console.error(e))
+  if (navigator.share) return navigator.share({text, url}).catch(() => {})
+  Promise.resolve().then(() => navigator.clipboard.writeText(url))
+    .then(() => toast(T.copied), e => { console.error(e); toast(T.copyFailed) })
+}
+
+function confirmRemove(p, err) {
+  const close = () => ov.remove()
+  const ov = h('div', {class: 'ov', onclick: e => e.target === ov && close()},
+    h('div', {class: 'dlg'}, h('h3', 0, T.rmQ), h('p', 0, T.rmSub), err && h('p', {class: 'err'}, err),
+      h('div', {class: 'row'},
+        h('button', {class: 'btn alt', onclick: close}, T.cancel),
+        h('button', {class: 'btn red', onclick: () => { close(); remove(p) }}, T.remove))))
+  main.append(ov)
+}
+
+async function remove(p) {
+  busy(T.removing)
+  try {
+    await call('remove', {id: p.id})
+  } catch (e) {
+    console.error(e)
+    busy()
+    return confirmRemove(p, e.message)
+  }
+  busy()
+  mem.removed.push(p.id)
+  save()
+  go('/', true)
+  toast(T.removed)
+}
+
+function blank() {
+  return {imgs: [], busy: 0, desc: '', op: '', dp: ''}
+}
+
+function setErr(k, msg) {
+  F[k].textContent = msg || ''
+  F[k].hidden = !msg
+  F[k + 'In']?.classList.toggle('bad', !!msg)
+}
+
+function form() {
+  const err = k => F[k] = h('p', {class: 'err', hidden: true})
+  const clear = k => { setErr(k); F.serr.hidden = true }
+  const cc = h('span', {class: 'cc'})
+  const count = () => {
+    const n = len(F.descIn.value)
+    cc.textContent = n + '/500'
+    cc.classList.toggle('over', n > 500)
+  }
+  const price = (k, label) => {
+    const i = F[k + 'In'] = h('input', {id: k, inputmode: 'decimal', autocomplete: 'off', placeholder: '0.00',
+      oninput: () => { draft[k] = i.value; clear(k) }})
+    i.value = draft[k]
+    return [h('label', {class: 'l', for: k}, label), h('div', {class: 'inp'}, i, h('span', 0, 'USDT')), err(k)]
+  }
+  F.descIn = h('textarea', {placeholder: T.descPh, 'aria-label': T.info,
+    oninput: () => { draft.desc = F.descIn.value; count(); clear('desc') }})
+  F.descIn.value = draft.desc
+  count()
+  F.pics = h('div', {class: 'pics'})
+  F.serr = h('div', {class: 'serr', hidden: true})
+  renderPics()
+  return h('form', {class: 'box form', novalidate: true, onsubmit: submit},
+    h('section', 0, h('h2', 0, T.images), F.pics, h('p', {class: 'hint'}, T.imgHint), err('img')),
+    h('section', 0, h('h2', 0, T.info), h('div', {class: 'ta'}, F.descIn, cc), err('desc')),
+    h('section', 0, h('h2', 0, T.priceSet), price('op', T.op), price('dp', T.dp)),
+    F.serr,
+    h('button', {class: 'btn', type: 'submit'}, T.submit))
+}
+
+function renderPics() {
+  F.pics.replaceChildren()
+  add(F.pics, [
+    draft.imgs.map(im => h('div', {class: 'pic'}, h('img', {src: im.url, alt: ''}),
+      h('button', {type: 'button', 'aria-label': T.rmImg, onclick: () => {
+        URL.revokeObjectURL(im.url)
+        draft.imgs = draft.imgs.filter(x => x !== im)
+        renderPics()
+      }}, icon('x')))),
+    Array.from({length: draft.busy}, () => h('div', {class: 'add'}, h('div', {class: 'spin'}))),
+    draft.imgs.length + draft.busy < 5 && h('label', {class: 'add', 'aria-label': T.addImg}, icon('plus'),
+      h('input', {type: 'file', accept: 'image/*', multiple: true, onchange: e => addFiles(e.target.files)}))
+  ])
+}
+
+async function addFiles(picked) {
+  const files = [...picked].slice(0, 5 - draft.imgs.length - draft.busy)
+  setErr('img', picked.length > files.length && T.imgMax)
+  draft.busy += files.length
+  renderPics()
+  for (const f of files) {
+    try {
+      const blob = await compress(f)
+      draft.imgs.push({blob, url: URL.createObjectURL(blob)})
+    } catch (e) {
+      console.error(e)
+      setErr('img', T.imgFail)
+    }
+    draft.busy--
+    renderPics()
+  }
+}
+
+async function compress(file) {
+  const url = URL.createObjectURL(file), img = new Image()
+  img.src = url
+  try {
+    await img.decode()
+    const w = img.naturalWidth, ht = img.naturalHeight, c = document.createElement('canvas'), x = c.getContext('2d')
+    for (let s = Math.min(1, 1080 / Math.max(w, ht)); ; s *= 0.8) {
+      c.width = Math.round(w * s)
+      c.height = Math.round(ht * s)
+      x.fillStyle = '#fff'
+      x.fillRect(0, 0, c.width, c.height)
+      x.drawImage(img, 0, 0, c.width, c.height)
+      for (let q = 0.85; ; q = Math.max(0.4, q - 0.1)) {
+        const b = await new Promise(r => c.toBlob(r, 'image/jpeg', q))
+        if (b.size <= 120 << 10) return b
+        if (q === 0.4) break
+      }
+    }
+  } finally {
+    URL.revokeObjectURL(url)
+  }
+}
+
+const b64 = blob => new Promise((resolve, reject) => {
+  const r = new FileReader()
+  r.onload = () => resolve(r.result.slice(r.result.indexOf(',') + 1))
+  r.onerror = () => reject(r.error)
+  r.readAsDataURL(blob)
+})
+
+const cents = v => /^\d+([.,]\d{0,2})?$/.test(v = v.trim()) ? Math.round(v.replace(',', '.') * 100) : 0
+
+async function submit(e) {
+  e.preventDefault()
+  if (draft.busy) return
+  const desc = draft.desc.trim(), n = len(desc), op = cents(draft.op), dp = cents(draft.dp)
+  const errs = {
+    img: !draft.imgs.length && T.imgReq,
+    desc: !n ? T.descReq : n > 500 && T.descLong,
+    op: !op && T.priceReq,
+    dp: !dp ? T.priceReq : op && dp > op && T.priceHigh
+  }
+  let first
+  for (const k in errs) {
+    setErr(k, errs[k])
+    if (errs[k] && !first) first = F[k]
+  }
+  if (first) return first.scrollIntoView({block: 'center', behavior: 'smooth'})
+  F.serr.hidden = true
+  busy(T.publishing)
+  try {
+    const images = await Promise.all(draft.imgs.map(i => b64(i.blob)))
+    const p = await call('publish', {description: desc, originalPrice: op, discountPrice: dp, images})
+    p.images.forEach((s, i) => local[s] = draft.imgs[i].url)
+    mem.added.unshift(p)
+    save()
+    draft = blank()
+    busy()
+    go('/p/' + enc(p.id), true)
+  } catch (e) {
+    console.error(e)
+    busy()
+    F.serr.textContent = e.message || T.pubFail
+    F.serr.hidden = false
+  }
+}
+
+document.addEventListener('click', e => {
+  const a = e.target.closest('a[data-r]')
+  if (!a || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+  e.preventDefault()
+  go(a.getAttribute('href'))
+})
+addEventListener('popstate', render)
+load()
+</script>
+</body>
+</html>

@@ -1,0 +1,496 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools" tools:ignore="MissingTranslation">
+    <string name="ok">確定</string>
+    <string name="cancel">取消</string>
+    <string name="link">連結</string>
+    <string name="scan">掃描</string>
+    <string name="on">開啟</string>
+    <string name="off">關閉</string>
+    <string name="def">預設</string>
+    <string name="none">無</string>
+    <string name="automatic">自動</string>
+    <string name="open">開啟</string>
+    <string name="download">下載</string>
+    <string name="downloading">下載中⋯</string>
+    <string name="delete">刪除</string>
+    <string name="info">資訊</string>
+    <string name="resend">重新傳送</string>
+    <string name="ephemeral_messages">自動銷毀訊息</string>
+    <string name="ephemeral_messages_hint">這些設定將會套用在所有使用 TapeTape 的聊天成員上。但他們依然可以複製、儲存和轉發訊息。</string>
+    <string name="mark_all_as_read">全部標記為已讀</string>
+    <string name="mark_as_read">標記為已讀</string>
+    <string name="mark_as_read_short">已讀</string>
+    <string name="loading">載入中⋯</string>
+    <string name="never">永遠不要</string>
+    <string name="one_moment">請稍候⋯</string>
+    <string name="done">完成</string>
+    <string name="undo">復原</string>
+    <string name="error">錯誤</string>
+    <string name="no_app_to_handle_data">沒有可以處理這種資料的應用程式.</string>
+    <string name="copied_to_clipboard">已複製至剪貼簿</string>
+    <string name="password">密碼</string>
+    <string name="today">今天</string>
+    <string name="yesterday">昨天</string>
+    <string name="this_week">本週</string>
+    <string name="this_month">本月</string>
+    <string name="last_month">上個月</string>
+    <string name="last_seen_at">最後上線時間：%1$s</string>
+    <string name="last_seen_unknown">最後上線時間：未知</string>
+    <plurals name="n_chats">
+        <item quantity="other">%d個聊天</item>
+    </plurals>
+    <plurals name="n_contacts">
+        <item quantity="other">%d位聯絡人</item>
+    </plurals>
+    <plurals name="n_messages">
+        <item quantity="other">%d條訊息</item>
+    </plurals>
+    <plurals name="n_members">
+        <item quantity="other">%d位成員</item>
+    </plurals>
+
+    <string name="self">我</string>
+    <string name="draft">草稿</string>
+    <string name="image">圖片</string>
+    <string name="gif">GIF</string>
+    <string name="sticker">貼圖</string>
+    <string name="audio">音訊</string>
+    <string name="voice_message">語音訊息</string>
+    <string name="forwarded">已轉發</string>
+    <string name="video">影片</string>
+    <string name="contact">聯絡人</string>
+    <string name="camera">相機</string>
+    <string name="gallery">相簿</string>
+    <string name="file">檔案</string>
+    <string name="files">檔案</string>
+    <string name="square_title">小程式</string>
+
+    <string name="green">綠色</string>
+    <string name="red">紅色</string>
+    <string name="blue">藍色</string>
+    <string name="orange">橘色</string>
+    <string name="cyan">靛色</string>
+    <string name="purple">紫色</string>
+    <string name="magenta">洋紅色</string>
+    <string name="white">白色</string>
+
+
+
+    <string name="menu_new_contact">新增聯絡人</string>
+    <string name="menu_new_chat">新增聊天</string>
+    <string name="menu_new_group">新增群組</string>
+    <string name="clone_chat">克隆聊天</string>
+    <string name="menu_send">送出</string>
+    <string name="menu_toggle_keyboard">切換表情符號鍵盤</string>
+    <string name="menu_edit_group">編輯群組</string>
+    <string name="menu_archive_chat">封存對話</string>
+    <string name="menu_unarchive_chat">對話解除封存</string>
+    <string name="menu_add_attachment">新增附件</string>
+    <string name="menu_leave_group">退出群組</string>
+    <string name="menu_delete_chat">刪除對話</string>
+    <string name="clear_chat">清除對話</string>
+    <string name="delete_contact">刪除聯絡人</string>
+    <string name="menu_copy_to_clipboard">複製至剪貼簿</string>
+    <string name="share_invite_link_explain">任何擁有此連結的人都可以查看您的個人資料並與您開始聊天。僅與您信任的人分享。</string>
+    <string name="invite_friends">邀請朋友</string>
+    <string name="invite_friends_text">在 TapeTape 上與我聯繫：\n%1$s</string>
+    <string name="paste_from_clipboard">從剪貼簿貼上</string>
+    <string name="menu_mute">關閉通知</string>
+    <string name="menu_unmute">開啟通知</string>
+    <string name="menu_export_attachments">另存附件</string>
+    <string name="menu_all_media">所有媒體</string>
+    <string name="menu_share">分享</string>
+    <string name="block">封鎖</string>
+    <string name="menu_block_contact">封鎖聯絡人</string>
+    <string name="menu_unblock_contact">解除封鎖聯絡人</string>
+    <string name="accept">接受</string>
+    <string name="menu_scroll_to_bottom">捲動到底端</string>
+    <string name="menu_select_all">全選</string>
+    <string name="menu_edit_name">編輯名稱</string>
+    <string name="menu_settings">設定</string>
+    <string name="menu_view_profile">查看個人檔案</string>
+    <string name="menu_save_log">儲存日誌</string>
+    <string name="menu_more_options">更多選項</string>
+    <string name="device_talk">裝置訊息</string>
+    <string name="device_talk_subtitle">本機產生的訊息</string>
+    <string name="device_talk_explain">這個聊天室內的訊息是由 TapeTape 軟體在本地產生的。開發者會在這裡發送軟體更新和使用幫助。</string>
+    <string name="ConversationFragment_quoted_message_not_found">找不到原始訊息</string>
+    <string name="reply_privately">私下回覆</string>
+
+    <string name="mute_for_one_hour">靜音1小時</string>
+    <string name="mute_for_two_hours">靜音2小時</string>
+    <string name="mute_for_one_day">靜音1天</string>
+    <string name="mute_for_seven_days">靜音7天</string>
+    <string name="mute_forever">永遠靜音</string>
+
+
+
+
+    <string name="ask_leave_group">確定要離開本群組？</string>
+    <plurals name="ask_delete_chat">
+        <item quantity="other">確定刪除%d個對話嗎？將會從對話紀錄中刪除，然而伺服器中仍會保留對話。</item>
+    </plurals>
+    <string name="ask_delete_named_chat">你確定你要刪除「%1$s」？</string>
+    <string name="ask_delete_message">你確定要刪除這則訊息？</string>
+    <plurals name="ask_delete_messages_simple">
+        <item quantity="other">刪除%d則訊息？</item>
+    </plurals>
+    <string name="ask_forward">轉發訊息給%1$s？</string>
+    <string name="ask_export_attachment">要匯出附件嗎？匯出的附件可以用裝置上的其它應用程式打開。\n\n要繼續嗎？</string>
+    <string name="ask_block_contact">要封鎖這個人嗎？你之後不會再收到這個人的訊息。</string>
+    <string name="ask_unblock_contact">要解除封鎖嗎？你之後可以繼續收到這個人的訊息。</string>
+    <string name="ask_delete_contacts">要刪除聯絡人嗎？選定的聯絡人將被永久刪除。\n\n正在進行對話的聯絡人、以及系統通訊錄中的聯絡人，無法被永久刪除。</string>
+    <string name="ask_delete_contact">要刪除%1$s聯絡人嗎？\n\n聊天室中的聯絡人和系統聯絡人將不會被永久刪除。</string>
+    <string name="ask_start_chat_with">要和%1$s開始對話嗎？</string>
+    <string name="ask_remove_members">要把%1$s移出群組嗎？</string>
+
+
+
+
+    <plurals name="chat_archived">
+        <item quantity="other">已封存%d個對話</item>
+    </plurals>
+    <plurals name="chat_unarchived">
+        <item quantity="other">已解封%d個對話</item>
+    </plurals>
+    <string name="chat_unable_to_record_audio">無法錄音</string>
+    <string name="chat_new_one_to_one_hint">向 %1$s 傳送訊息。</string>
+    <string name="chat_new_group_hint">只有在你傳送第一條訊息後，其他人才會看到此群組。</string>
+    <string name="chat_record_slide_to_cancel">滑動以取消</string>
+    <string name="chat_record_explain">按住錄音，放開後傳送</string>
+    <string name="chat_share_with_title">分享給...</string>
+    <string name="chat_input_placeholder">訊息</string>
+    <string name="chat_archived_label">封存</string>
+    <string name="chat_request_label">請求</string>
+    <string name="chat_no_messages">沒有訊息。</string>
+    <string name="chat_self_talk_subtitle">傳送給自己的訊息</string>
+    <string name="archive_empty_hint">存檔的聊天記錄將在此處顯示。</string>
+    <string name="saved_messages">已儲存的訊息</string>
+    <string name="saved_messages_explain">• 在此處轉發消息以便於訪問\n\n• 做筆記或語音備忘錄\n\n• 附加媒體以保存它們</string>
+    <string name="saved">已儲存</string>
+
+
+
+
+
+
+
+    <string name="search">搜尋</string>
+    <string name="search_no_result_for_x">找不到 「%s」</string>
+    <string name="search_unread">未讀</string>
+
+
+    <string name="group_name">群組名稱</string>
+    <string name="group_please_enter_group_name">請輸入群組的名稱</string>
+    <string name="group_add_members">新增成員</string>
+    <string name="profile_encryption">加密</string>
+    <string name="profile_shared_chats">共享的對話</string>
+    <string name="tab_contact">聯絡人</string>
+    <string name="tab_group">群組</string>
+    <string name="tab_gallery">相簿</string>
+    <string name="tab_gallery_empty_hint">本對話中共享的圖片和視訊會顯示在這裡。</string>
+    <string name="tab_docs_empty_hint">本對話中共享的文件、音樂和其它檔案會顯示在這裡。</string>
+    <string name="tab_audio_empty_hint">在此聊天中分享的音訊檔和語音消息將顯示在此處。</string>
+    <string name="tab_all_media_empty_hint">在任何聊天中分享的媒體都會顯示在此處。</string>
+    <string name="send_message">傳送訊息</string>
+
+
+
+    <string name="incoming_messages">傳入訊息</string>
+    <string name="outgoing_messages">傳出訊息</string>
+    <string name="storage_on_domain">%1$s上的存儲空間</string>
+    <string name="connectivity">連接狀態</string>
+    <string name="connectivity_not_connected">未連接</string>
+    <string name="connectivity_connecting">連接中…</string>
+    <string name="connectivity_connected">已連接</string>
+    <string name="sending">傳送中…</string>
+
+
+    <string name="onboarding_create_instant_account">創建新帳戶</string>
+    <string name="onboarding_alternative_logins">我已經有了一個賬戶</string>
+    <string name="instant_onboarding_agree_instance">關於%1$s上的個人資料</string>
+    <string name="instant_onboarding_create">同意並創建賬戶</string>
+
+    <string name="login_no_servers_hint">TapeTape 沒有伺服器，你的資料只會存在你自己的裝置上!</string>
+    <string name="proxy_settings">代理伺服器</string>
+    <string name="proxy_use_proxy">使用代理伺服器</string>
+    <string name="proxy_add">添加代理伺服器</string>
+    <string name="proxy_add_explain">支援的代理伺服器類型：HTTP（S）、SOCKS5 和 Shadowsocks。</string>
+    <string name="proxy_add_url_hint">在此處輸入代理伺服器連結</string>
+    <string name="proxy_invalid">代理伺服器無效或不受支援</string>
+    <string name="proxy_list_header">已保存的代理伺服器</string>
+    <string name="proxy_delete">刪除代理伺服器</string>
+    <string name="proxy_delete_explain">是否確實要刪除 「%1$s」？</string>
+    <string name="proxy_use_proxy_confirm">是否要使用代理 「%1$s」？</string>
+    <string name="proxy_share_explain">您的朋友可以通過掃描QR碼來添加此代理。</string>
+    <string name="proxy_share_link">分享連結</string>
+
+
+    <string name="import_backup_title">匯入備份</string>
+    <string name="switch_account">切換個人檔案</string>
+    <string name="add_account">新增個人檔案</string>
+    <string name="profile_tag">私有標籤</string>
+    <string name="profile_tag_hint">例如工作、 家庭</string>
+    <string name="profile_tag_explain">僅對您可見的標籤；幫助您區分您的個人資料。</string>
+    <string name="delete_account">刪除個人檔案</string>
+    <string name="delete_account_explain_with_name">此裝置上 「%s」 的所有賬戶資料都將被刪除，包括您的端到端加密設置、聯絡人、聊天、消息和媒體。此操作無法復原。</string>
+
+    <string name="forward_to">轉發給...</string>
+    <string name="ask_send_files_to_chat">將%1$d個檔案傳送到「%2$s」？？</string>
+
+
+    <string name="pref_profile_info_headline">你的個人資料</string>
+    <string name="pref_blocked_contacts">已封鎖的聯絡人</string>
+    <string name="blocked_empty_hint">被封鎖的聯絡人將在此處顯示。</string>
+    <string name="pref_who_can_see_profile_explain">你的名字和大頭照在通訊的過程中，會提供給對方看到。已傳送的資訊無法被刪除或移除。</string>
+    <string name="pref_your_name">你的名字</string>
+    <string name="pref_default_status_label">簽名檔</string>
+    <string name="pref_enter_sends">換行鍵送出訊息</string>
+    <string name="pref_enter_sends_explain">按下換行鍵就送出訊息</string>
+    <string name="pref_outgoing_media_quality">傳送的媒體品質</string>
+    <string name="pref_outgoing_balanced">普通</string>
+    <string name="pref_outgoing_worse">低品質</string>
+    <string name="pref_vibrate">振動</string>
+    <string name="pref_notifications">通知設定</string>
+    <string name="pref_notifications_show">顯示通知</string>
+    <string name="pref_notifications_priority">通知優先權</string>
+    <string name="pref_led_color">LED顏色</string>
+    <string name="pref_sound">音效</string>
+    <string name="pref_silent">靜音</string>
+    <string name="pref_chats_and_media">對話和媒體設定</string>
+    <string name="pref_system_default">系統預設</string>
+    <string name="pref_light_theme">亮色</string>
+    <string name="pref_dark_theme">暗色</string>
+    <string name="pref_appearance">外觀</string>
+    <string name="pref_theme">佈景主題</string>
+    <string name="pref_read_receipts">收執回條設定</string>
+    <string name="pref_read_receipts_explain">關掉收執回條的話，就無法知道對方是否已讀訊息。</string>
+    <string name="pref_server">伺服器</string>
+    <string name="pref_chats">對話</string>
+    <string name="pref_in_chat_sounds">對話內的音效</string>
+    <string name="pref_view_log">觀看系統紀錄</string>
+    <string name="pref_log_header">系統紀錄</string>
+    <string name="pref_backup">備份</string>
+    <string name="pref_backup_export_explain">備份可以把這個帳號恢復到本機或另一台裝置上。\n\n備份裡有你全部的訊息、聯絡人、聊天以及私鑰。請把備份檔放在安全的地方，恢復完成後儘快刪除。</string>
+    <string name="pref_backup_export_x">匯出 %1$s</string>
+    <string name="pref_backup_export_all">匯出全部%1$d個賬戶</string>
+    <string name="pref_backup_written_to_x">成功備份至 「%1$s」</string>
+    <string name="pref_background">背景</string>
+    <string name="pref_background_btn_default">使用預設圖案</string>
+    <string name="pref_background_btn_gallery">從相簿中挑選</string>
+    <string name="pref_show_emails_all">所有郵件</string>
+    <string name="pref_background_custom_image">自訂圖片</string>
+    <string name="export_aborted">匯出已中止。</string>
+    <string name="auto_download_messages">自動下載訊息</string>
+    <string name="up_to_x">%1$s 以下</string>
+    <string name="download_failed">下載失敗</string>
+    <string name="profile_image_select">選擇大頭貼</string>
+    <string name="profile_image_delete">刪除大頭貼</string>
+
+
+
+    <string name="reactions">反應</string>
+    <string name="reaction_by_other"> %1$s對「%3$s」回應了%2$s。 </string>
+
+    <string name="delete_old_messages">刪除舊訊息</string>
+    <string name="autodel_device_title">從裝置中刪除訊息</string>
+    <string name="autodel_server_title">從伺服器中刪除訊息</string>
+    <string name="autodel_device_ask">您是否要立即刪除%1$d條消息，之後在收到消息「%2$s」后刪除它們？ \n\n⚠️ 這包括伺服器所有媒體\n\n•這包括所有媒體\n\n• 無論消息是否被看到都將被刪除\n\n• “已保存的郵件”將不會被本地刪除</string>
+    <string name="autodel_confirm">我已知曉，刪除所有這些消息</string>
+    <string name="autodel_at_once">下載后立即</string>
+    <string name="after_1_minute">1 分鐘後</string>
+    <string name="after_5_minutes">5 分鐘後</string>
+    <string name="after_30_minutes">30 分鐘後</string>
+    <string name="autodel_after_1_hour">1 小時後</string>
+    <string name="autodel_after_1_day">1 天後</string>
+    <string name="autodel_after_1_week">1 週後</string>
+    <string name="after_5_weeks">5 週後</string>
+    <string name="autodel_after_1_year">1 年後</string>
+
+
+
+    <string name="group_name_changed_by_you">我群組名稱已從 「%1$s」 更改為「%2$s」。</string>
+    <string name="group_name_changed_by_other">%3$s已將群組名稱從「%1$s」更改為「%2$s」。</string>
+    <string name="group_image_changed_by_you">我已更改群組圖片。</string>
+    <string name="group_image_changed_by_other">%1$s已更改群組圖片。</string>
+    <string name="add_member_by_you">我已新增成員 %1$s</string>
+    <string name="add_member_by_other">%2$s已新增成員 %1$s</string>
+    <string name="remove_member_by_you">我已移除成員 %1$s</string>
+    <string name="remove_member_by_other">%2$s已移除成員 %1$s</string>
+    <string name="group_left_by_you">你離開了群組。</string>
+    <string name="group_left_by_other">%1$s 退出了群組。</string>
+    <string name="ephemeral_timer_disabled_by_you">你禁用了自動刪除訊息計時器。</string>
+    <string name="ephemeral_timer_disabled_by_other">%1$s禁用了自動刪除訊息計時器。</string>
+    <string name="ephemeral_timer_seconds_by_you">您將自動刪除訊息計時器設置為%1$s秒</string>
+    <string name="ephemeral_timer_seconds_by_other">%2$s設置自動刪除訊息計時器為%1$s秒。</string>
+    <string name="ephemeral_timer_1_minute_by_you">您將自動刪除訊息計時器設置為 1 分鐘。</string>
+    <string name="ephemeral_timer_1_minute_by_other">%1$s將自動刪除訊息計時器設置為 1 分鐘。</string>
+    <string name="ephemeral_timer_1_hour_by_you">您將自動刪除訊息計時器設置為 1 小時。</string>
+    <string name="ephemeral_timer_1_hour_by_other">%1$s將自動刪除訊息計時器設置為 1 分鐘。</string>
+    <string name="ephemeral_timer_1_day_by_you">您將自動刪除訊息計時器設置為 1 天。</string>
+    <string name="ephemeral_timer_1_day_by_other">%1$s將自動刪除訊息計時器設置為 1 天。</string>
+    <string name="ephemeral_timer_1_week_by_you">您將自動刪除訊息計時器設置為 1週。</string>
+    <string name="ephemeral_timer_1_week_by_other">%1$s將自動刪除訊息計時器設置為 1週。</string>
+    <string name="ephemeral_timer_minutes_by_you">您將自動刪除訊息計時器設置為%1$s分鐘。</string>
+    <string name="ephemeral_timer_minutes_by_other">%2$s將自動刪除訊息計時器設置為%1$s分鐘。</string>
+    <string name="ephemeral_timer_hours_by_you">您將自動刪除訊息計時器設置為%1$s小時。</string>
+    <string name="ephemeral_timer_hours_by_other">%2$s將自動刪除訊息計時器設置為%1$s小時。</string>
+    <string name="ephemeral_timer_days_by_you">您將自動刪除訊息計時器設置為%1$s天。</string>
+    <string name="ephemeral_timer_days_by_other">%2$s將自動刪除訊息計時器設置為%1$s小時。</string>
+    <string name="ephemeral_timer_weeks_by_you">您將自動刪除訊息計時器設置為%1$s週。</string>
+    <string name="ephemeral_timer_weeks_by_other">%2$s將自動刪除訊息計時器設置為%1$s週。</string>
+    <string name="learn_more">瞭解更多</string>
+
+
+    <string name="enter_system_secret_to_continue">解鎖以繼續</string>
+
+    <string name="load_qr_code_as_image">从相片載入QR碼</string>
+    <string name="qrscan_title">掃描QR Code</string>
+    <string name="qrscan_hint">請將相機對準 QR碼</string>
+    <string name="qrscan_failed">QR 碼無法識別</string>
+    <string name="qrscan_ask_join_group">你要參加群組 「%1$s」嗎?</string>
+    <string name="qrscan_contains_text">掃描的 QR 碼文本：\n\n%1$s</string>
+    <string name="qrscan_contains_url">掃描的 QR 碼 URL：\n\n%1$s</string>
+    <string name="withdraw_verifycontact_explain">其他人可以掃描此QR碼與您聯絡。您可以在此處停用QR碼，然後再次掃描以重新啟動它。</string>
+    <string name="withdraw_verifygroup_explain">其他人可以掃描此 QR 碼以加入群組「%1$s」。\n\n您可以在此處停用 QR 碼，然後再次掃描以重新啟動它。</string>
+    <string name="withdraw_qr_code">停用QR碼</string>
+    <string name="qrshow_title">邀請QR碼</string>
+    <string name="qrshow_join_group_title">邀請QR碼</string>
+    <string name="qrshow_join_group_hint">掃描加入群組「%1$s」</string>
+    <string name="qrshow_join_contact_hint">掃描 QRCode 以新增 %1$s</string>
+    <string name="set_name_and_avatar_explain">設置聯絡人可以識別的名稱。您還可以設置大頭貼。</string>
+    <string name="please_enter_name">請輸入名稱。</string>
+
+    <string name="notify_reply_button">回覆</string>
+    <string name="notify_new_message">新訊息</string>
+    <string name="notify_background_connection_enabled">已啟用後台連接</string>
+    <string name="notify_priority_high">高</string>
+    <string name="notify_priority_max">最高</string>
+    <string name="notify_name_and_message">名稱和訊息</string>
+    <string name="notify_name_only">僅名稱</string>
+    <string name="notify_no_name_or_message">沒有名稱或訊息</string>
+    <string name="notifications_disabled">通知已停用</string>
+    <string name="new_messages">新訊息</string>
+
+
+    <string name="perm_continue">繼續</string>
+    <string name="perm_explain_access_to_camera_denied">要拍照或攝錄影片，請轉到應用程式設定，選擇「存取權」，然後啟用「相機」。</string>
+    <string name="perm_explain_access_to_storage_denied">要接收或發送文件，請轉到應用程式設定，選擇「存取權」，然後啟用「存儲」。</string>
+    <string name="perm_explain_access_to_notifications_denied">要接收通知，請轉到「系統設定/應用程式/TapeTape」並啟用「通知」。</string>
+
+    <string name="editor_draw_anywhere_to_blur">在任意位置繪製以進行模糊處理</string>
+    <string name="editor_add_text">新增文字</string>
+    <string name="editor_blur">模糊</string>
+    <string name="editor_brush_marker">標記筆</string>
+    <string name="editor_brush_highlight">螢光筆</string>
+    <string name="editor_crop">裁切</string>
+    <string name="editor_flip">翻轉</string>
+    <string name="editor_rotate">旋轉</string>
+
+
+    <string name="global_menu_edit_desktop">編輯</string>
+    <string name="global_menu_edit_copy_desktop">複製</string>
+    <string name="remove_desktop">移除</string>
+    <string name="export_backup_desktop">匯出備份</string>
+
+
+
+    <string name="disabled_in_system_settings">在系統設定中禁用</string>
+    <string name="pref_instant_delivery">即時傳送</string>
+    <string name="pref_background_notifications">使用背景連接</string>
+    <string name="pref_background_notifications_explain">需要忽略的電池優化，如果通知未按時到達，請使用</string>
+    <string name="pref_reliable_service">強制後台連接</string>
+    <string name="pref_reliable_service_explain">導致永久通知</string>
+
+
+
+    <string name="wallet_import_mnemonic">匯入助記詞</string>
+    <string name="wallet_generating_mnemonic">正在產生助記詞…</string>
+    <string name="wallet_mnemonic_label">助記詞:</string>
+    <string name="wallet_evm_address_label">EVM 位址:</string>
+    <string name="wallet_email_address_label">中繼位址:</string>
+    <string name="relay_address">中繼位址</string>
+    <string name="voice_effect_title">變聲效果</string>
+    <string name="voice_effect_original">原聲</string>
+    <string name="voice_effect_robot">機器人</string>
+    <string name="relay_error_not_accepted">未送達：對方尚未接受你的聊天請求，接受前只能收到你的第一則訊息。</string>
+    <string name="relay_error_no_key">未傳送：對方尚未開通 TapeTape。</string>
+    <string name="relay_error_too_large">未傳送：訊息太大。</string>
+    <string name="wallet_derive_failed">從助記詞衍生位址失敗: %1$s</string>
+    <string name="wallet_enter_valid_mnemonic">請輸入有效的助記詞</string>
+    <string name="wallet_validation_failed">驗證失敗</string>
+    <string name="wallet_invalid_mnemonic">助記詞無效，請檢查拼寫和單詞數量（應為12個單詞）</string>
+    <string name="wallet_confirm_address_title">確認位址</string>
+    <string name="wallet_confirm_address_message">從匯入的助記詞衍生出以下位址：</string>
+    <string name="wallet_confirm_address_question">請確認這是您預期的位址？</string>
+    <string name="wallet_confirm_continue">確認並繼續</string>
+    <string name="wallet_import_success">助記詞匯入成功</string>
+    <string name="wallet_import_failed">匯入失敗: %1$s</string>
+    <string name="wallet_export_mnemonic">匯出助記詞</string>
+    <string name="wallet_no_mnemonic">未找到此帳戶的助記詞</string>
+    <string name="wallet_copy_mnemonic">複製助記詞</string>
+    <string name="wallet_copy_address">複製位址</string>
+    <string name="wallet_mnemonic_input_hint">請輸入12個單詞，以空格分隔</string>
+    <string name="wallet_mnemonic_paste_hint">提示: 支援直接貼上完整助記詞，會自動處理格式</string>
+    <string name="wallet_mnemonic_info_title">助記詞資訊</string>
+    <string name="wallet_export_mnemonic_summary">備份您的 EVM 錢包助記詞</string>
+    <string name="wallet_backup_title">助記詞產生成功</string>
+    <string name="wallet_backup_message">請務必妥善保存以下助記詞，這是恢復帳號的唯一方式：\n\n%1$s\n\n請確認您已安全記錄助記詞後再繼續</string>
+    <string name="wallet_copy_and_login">複製並登入</string>
+    <string name="wallet_mnemonic_copied">助記詞已複製到剪貼簿</string>
+
+    <string name="red_packet">紅包</string>
+    <string name="transfer">轉帳</string>
+    <string name="send_red_packet">發紅包</string>
+    <string name="send_transfer">轉帳</string>
+    <string name="select_token">選擇代幣</string>
+    <string name="confirm_send_red_packet">確認發送紅包</string>
+    <string name="confirm_send_transfer">確認轉帳</string>
+    <string name="red_packet_send_success">紅包發送成功！</string>
+    <string name="transfer_send_success">轉帳發送成功！</string>
+    <string name="claim_transfer">領取轉帳</string>
+    <string name="transfer_claimed">您收到了 %1$s %2$s</string>
+    <string name="red_packet_all_claimed">已領完</string>
+    <string name="red_packet_expired">已過期</string>
+    <string name="red_packet_already_claimed">已領取</string>
+    <string name="red_packet_detail">紅包詳情</string>
+    <string name="red_packet_view_detail">查看領取詳情 ></string>
+    <string name="transfer_detail">轉帳詳情</string>
+    <string name="pending_confirmation">確認中…</string>
+    <string name="transaction_submitted">交易已提交…</string>
+    <string name="waiting_confirmation">等待確認…</string>
+    <string name="transaction_success">交易成功！</string>
+    <string name="transaction_failed">交易失敗</string>
+    <string name="transaction_timeout">交易逾時</string>
+    <string name="red_packet_open">開</string>
+    <string name="transfer_from">來自 %1$s 的轉帳</string>
+    <string name="transfer_to">轉帳給 %1$s</string>
+    <string name="red_packet_insufficient_balance">紅包餘額不足</string>
+    <string name="transfer_insufficient_balance">轉帳餘額不足</string>
+    <string name="amount_per_packet_too_small">單個紅包金額太小</string>
+    <string name="transfer_note">備註</string>
+    <string name="transfer_time">轉帳時間</string>
+    <string name="transfer_status_claimed_by_me">已轉入你的錢包</string>
+    <string name="transfer_status_claimed_by_receiver">已轉入對方錢包</string>
+    <string name="transfer_status_sent_by_you">轉帳已發送，等待對方收款</string>
+    <string name="transfer_waiting_for_you">等待你收款</string>
+    <string name="transfer_token">代幣</string>
+    <string name="transfer_amount">金額</string>
+    <string name="transfer_note_placeholder">轉帳備註（可選，最多60字）</string>
+    <string name="transfer_send_button">轉帳</string>
+    <string name="red_packet_lucky">拼手氣紅包</string>
+    <string name="red_packet_group_members">群組成員: %1$d</string>
+    <string name="red_packet_count_label">紅包個數</string>
+    <string name="red_packet_count_unit">個</string>
+    <string name="red_packet_total_amount">總金額 (%1$s)</string>
+    <string name="red_packet_send_button">塞錢進紅包</string>
+    <string name="red_packet_sending">正在發送紅包…</string>
+    <string name="red_packet_confirm_send">確認發送 %1$s %2$s (%3$d個紅包)?</string>
+    <string name="red_packet_invalid_count">紅包個數無效</string>
+    <string name="you_received">你收到了</string>
+    <string name="sell">賣貨</string>
+    <string name="reset">重設</string>
+    <string name="move_to_top">移到頂部</string>
+    <string name="pref_mention_notifications">提及</string>
+    <string name="pref_mention_notifications_explain">在靜音群組中，仍通知與你直接相關的訊息，例如回覆或回應</string>
+</resources>

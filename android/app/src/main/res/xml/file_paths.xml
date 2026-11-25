@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<paths>
+    <files-path name="accounts" path="accounts/" />
+    <files-path name="blobs" path="fake/blobs/" />
+    <cache-path name="outgoing" path="outgoing/" />
+</paths>

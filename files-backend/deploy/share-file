@@ -1,0 +1,16 @@
+#!/bin/bash
+# 用电路的开发者密钥把文件加密上传到 TapeRelay，打印分享链接。
+# 用法：sudo /opt/tapetape-files/share-file [--latest] <文件> [显示的文件名]
+#   --latest  上传成功后把 https://tapetape.org/apk 指到这个新链接（发安卓新版时用）
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "要用 sudo 运行"; exit 1; }
+latest=0; [ "${1:-}" = "--latest" ] && { latest=1; shift; }
+set -a; . /etc/tapetape-files/env; set +a
+cd /opt/tapetape-files/app
+out=$(mktemp); trap 'rm -f "$out"' EXIT
+/opt/tapetape-files/runtime/node /opt/tapetape-files/app/share-file.mjs "$@" | tee "$out"
+if [ "$latest" = 1 ]; then
+  link=$(sed -n 's/^分享链接：//p' "$out")
+  [ -n "$link" ] || { echo "没拿到分享链接，短链接没改"; exit 1; }
+  /opt/tapetape-files/set-apk "$link"
+fi

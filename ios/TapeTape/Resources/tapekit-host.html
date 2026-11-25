@@ -1,0 +1,2178 @@
+<!doctype html>
+<!-- TapeTape 广场浏览器内核宿主。Tapekit ebf861b（github.com/TapeOutProtocol/TapeKit），由 tapetape-v2/browser/build.mjs 生成，不要手改 -->
+<meta charset="utf-8">
+<script>
+(() => {
+  var __create = Object.create;
+  var __defProp = Object.defineProperty;
+  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
+  var __getOwnPropNames = Object.getOwnPropertyNames;
+  var __getProtoOf = Object.getPrototypeOf;
+  var __hasOwnProp = Object.prototype.hasOwnProperty;
+  var __require = /* @__PURE__ */ ((x) => typeof require !== "undefined" ? require : typeof Proxy !== "undefined" ? new Proxy(x, {
+    get: (a, b) => (typeof require !== "undefined" ? require : a)[b]
+  }) : x)(function(x) {
+    if (typeof require !== "undefined") return require.apply(this, arguments);
+    throw Error('Dynamic require of "' + x + '" is not supported');
+  });
+  var __copyProps = (to, from, except, desc) => {
+    if (from && typeof from === "object" || typeof from === "function") {
+      for (let key of __getOwnPropNames(from))
+        if (!__hasOwnProp.call(to, key) && key !== except)
+          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
+    }
+    return to;
+  };
+  var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
+    // If the importer is in node compatibility mode or this is not an ESM
+    // file that has been converted to a CommonJS file using a Babel-
+    // compatible transform (i.e. "__esModule" has not been set), then set
+    // "default" to the CommonJS "module.exports" for node compatibility.
+    isNodeMode || !mod || !mod.__esModule ? __defProp(target, "default", { value: mod, enumerable: true }) : target,
+    mod
+  ));
+
+  // ../../../TapeKit/kernel/src/config.js
+  var IMPL_SLOT = "0x360894a13ba1a3210667c828492db98dca3e2076cc3735a920a3ca505d382bbc";
+  var BSC_MAINNET = Object.freeze({
+    chainId: 56,
+    key: "bnb",
+    name: "BNB Smart Chain",
+    currency: "BNB",
+    area: null,
+    // 不带区号
+    nameSuffix: "tape",
+    // 读取钉在哪个区块：'latest' = 多数节点都有的最新块往回 2 块；'safe' = 节点报告的安全区块（L2 用）
+    pin: "latest",
+    // TapeSend 判断消息"已确认"用的区块标签
+    finality: "finalized",
+    // TapeSend 读公钥时，钉住的区块最多落后这么多秒（再旧就可能读到已换掉的公钥）
+    maxBlockAgeSeconds: 300,
+    // 钉住的块最多比"各运营方报的最高块"落后这么多块（约 5 分钟，BNB 约 0.75 秒一块）；再多就拒绝读取
+    maxPinLagBlocks: 400,
+    // TapeOut 处理器工厂：cpuAt(i) 给出第 i 号处理器（电路 NFT 合约），编号从 0 开始、只增不改
+    factory: "0x68224f668083c29e9800be2a646d42d18cedf7e2",
+    // 电路容器开通器：accountOf(处理器, #ID) 算出容器地址，isOpened 判断是否已开通
+    opener: "0x021745de2f42a7839d96f2d3634d0294487d81f1",
+    // 网站文件仓库（SiteRegistry 代理）；数组以便将来多版本并存，按序查，先命中先用
+    registries: Object.freeze(["0xd006ffdd5ae313b17729621a00999cd3c71ce5e6"]),
+    // 付费合约（DomainBinding 代理）：链上名字 "<#ID>.<处理器编号>.tape" 的开通费也记在这里
+    binding: "0x861ee183de2bbe4a6ecf9d15812c123b566a3db7",
+    // 升级是 UUPS：客户端钉住审计过的实现，实现变了就拒绝服务（fail-closed），直到客户端更新这张表
+    expectedImpl: Object.freeze({
+      "0xd006ffdd5ae313b17729621a00999cd3c71ce5e6": Object.freeze(["0x1d279d138a4d803378a7d4557c056f1bed53c261"]),
+      // 2026-09-13 升级：容器级付费（isContainerLive）。旧实现保留在名单里是为了 owner 回滚时客户端不拒服，两者都经过审计。
+      "0x861ee183de2bbe4a6ecf9d15812c123b566a3db7": Object.freeze(["0xaa226181a6588d3f9ac0035e5f3dbaf311039bce", "0x4e8684eaea48b524245b2191dee451eaa1c1ca94"])
+    }),
+    // 允许浏览器直接调用（CORS 预检通过）、支持批量请求的公共节点，**五家互不隶属的运营方**（2026-09-19 实测）：
+    // NodeReal（BNB 官方 dataseed 背后就是它）、Allnodes（publicnode）、thirdweb、Alchemy（blastapi）、dRPC。
+    // 不再放 defibit / ninicoin / binance.org 的 dataseed：响应头都带 NodeReal 的追踪号、版本号相同，是同一家，
+    // 按域名会被误算成多家，"三家一致"实际一家就能满足。
+    // 不放 bloXroute（bsc.rpc.blxrbdn.com）：它只有最近几千块的数据，更早的收据回答 null（"没有这笔"）而不是报错，
+    // 严格读取会把它当成一个不同的答案——既造成分歧，也可能误导"交易没有上链"的判断。
+    // 历史数据（约半小时以前的收据）：publicnode 要付费令牌（报错，严格读取会忽略它），thirdweb、dRPC 时常超时或限流，
+    // 稳定能读的是 NodeReal 和 Alchemy。旧消息的附件核对因此可能读不齐三家，显示"暂时核对不了"，可以在设置里加自己的节点。
+    rpcs: Object.freeze([
+      "https://bsc-dataseed.bnbchain.org",
+      "https://bsc-rpc.publicnode.com",
+      "https://56.rpc.thirdweb.com",
+      "https://bsc-mainnet.public.blastapi.io",
+      "https://bsc.drpc.org"
+    ]),
+    // 各节点的单包上限与运营方（同一运营方的多个节点只算一票）。没列出的节点用内核默认值，节点拒绝批量时自动缩小。
+    // callerKeys：节点会从网址的路径或查询串里读调用方密钥（thirdweb、Tenderly、Alchemy、dRPC 都有这种用法）。
+    // 链上网站不能直接访问这种节点：否则网站能用自己的密钥让访客的浏览器把数据发到自己账户名下（审计 2026-09-19）。内核自己照常用
+    rpcLimits: Object.freeze({
+      "https://bsc-dataseed.bnbchain.org": Object.freeze({ maxBatch: 20, operator: "nodereal" }),
+      "https://bsc-rpc.publicnode.com": Object.freeze({ maxBatch: 20, operator: "allnodes" }),
+      // thirdweb 对未来块的报错和 dRPC 逐字相同（审计第三轮），可能走的是 dRPC：保守按 dRPC 计，不多算一家
+      "https://56.rpc.thirdweb.com": Object.freeze({ maxBatch: 10, operator: "drpc", callerKeys: true }),
+      "https://bsc-mainnet.public.blastapi.io": Object.freeze({ maxBatch: 10, operator: "alchemy", callerKeys: true }),
+      "https://bsc.drpc.org": Object.freeze({ maxBatch: 3, operator: "drpc", callerKeys: true })
+    }),
+    // TapeSend 判断处理器是否已冻结、工厂是否已封印所需的常量（TAP-10 §3.8）。
+    // implementation 是 2026-10-22 冻结已建成处理器后的工厂实现（之前是 0xa68ccf49…）
+    factorySeal: Object.freeze({
+      implementation: "0x77080dd83c16bdf6d71055c3a191fc890b5a8fe2",
+      circuitBeacon: "0xf8d6d8eb894d6971c8976ad8b4971cbefe028156",
+      circuitImplementation: "0x8e1d125def6d3826c278299273a0760d47626068"
+    })
+  });
+  var L2_CONTRACTS = Object.freeze({
+    factory: "0x1f09daefa827f02cbb40967cc91b259763760761",
+    opener: "0x536add8f30f03b69f6fbf29d425a816a0dc50106",
+    registries: Object.freeze(["0xd6efb7adcc9c83dc4924ad56f6a8e4e969b9adb6"]),
+    binding: "0x68809fd2fb343aa57d0aeb7f33defe477c9666f9",
+    expectedImpl: Object.freeze({
+      "0xd6efb7adcc9c83dc4924ad56f6a8e4e969b9adb6": Object.freeze(["0xa85c4143d1d4a77f54b8e4ecc9e6d1418afea45f"]),
+      "0x68809fd2fb343aa57d0aeb7f33defe477c9666f9": Object.freeze(["0x5ebf29b80789e548907c707530c3c7607c4347df"])
+    }),
+    nameSuffix: "tape",
+    // 读取和 BNB 一样钉在最新块往回 2 块：消息、网站几秒内就能看到。
+    // "已确认"以安全区块为准（用户定案）：L2 的最新块由排序器单方面给出、还没提交到以太坊，可能被改写。
+    // TapeSend 界面上 L2 消息不显示"确认中"（只是查看消息，用户定案），但内部仍按安全区块判断：
+    // 资产附件的核对、首次引用记录都要等安全区块；读不到安全区块高度时一律当未确认。
+    // 不把读取钉在安全区块：2026-09-19 实测 X Layer 的安全区块落后 3–4 分钟、而且隔几分钟跳一大段，用户要干等。
+    pin: "latest",
+    finality: "safe",
+    maxBlockAgeSeconds: 300
+  });
+  var XLAYER_MAINNET = Object.freeze({
+    chainId: 196,
+    maxPinLagBlocks: 300,
+    // 约 1 秒一块，约 5 分钟
+    key: "xlayer",
+    name: "X Layer",
+    currency: "OKB",
+    area: 2,
+    ...L2_CONTRACTS,
+    // 两条 L2 的工厂代理地址相同，但 2026-10-22 冻结时各自部署了新的工厂实现，地址不同
+    factorySeal: Object.freeze({
+      implementation: "0xb41c1e7602eb5734be2430b72178ccb814a5293d",
+      circuitBeacon: "0xf70d1ed4f62cf3780157b0b421b7e2f45bd0991c",
+      circuitImplementation: "0x977f217887e085d298cb3819cdad5a0ee35f29b2"
+    }),
+    // 2026-09-19 实测：都允许浏览器跨域调用，都能读 safe 区块、事件和整块收据。
+    // 独立运营方实际只有两家：OKX（两个域名；它也是 X Layer 的排序器）和 dRPC。
+    // thirdweb 的 X Layer 节点对未知方法、超范围区块的报错和 OKX 逐字相同（它在 Base、BNB 上的报错格式不同），
+    // 应是直接转发 OKX，按 OKX 计。所以严格读取要求 OKX 和 dRPC 两家一致；任一家挂了就读不到，可以在设置里加自己的节点。
+    rpcs: Object.freeze([
+      "https://rpc.xlayer.tech",
+      "https://xlayerrpc.okx.com",
+      "https://xlayer.drpc.org",
+      "https://196.rpc.thirdweb.com"
+    ]),
+    rpcLimits: Object.freeze({
+      "https://rpc.xlayer.tech": Object.freeze({ maxBatch: 10, operator: "okx" }),
+      "https://xlayerrpc.okx.com": Object.freeze({ maxBatch: 10, operator: "okx" }),
+      "https://xlayer.drpc.org": Object.freeze({ maxBatch: 3, operator: "drpc", callerKeys: true }),
+      "https://196.rpc.thirdweb.com": Object.freeze({ maxBatch: 10, operator: "okx", callerKeys: true })
+    })
+  });
+  var BASE_MAINNET = Object.freeze({
+    chainId: 8453,
+    maxPinLagBlocks: 150,
+    // 2 秒一块，约 5 分钟
+    key: "base",
+    name: "Base",
+    currency: "ETH",
+    area: 3,
+    ...L2_CONTRACTS,
+    factorySeal: Object.freeze({
+      implementation: "0xefc6b7eaea35a4894c980b74cb1d5d468ae2b4d4",
+      circuitBeacon: "0xf70d1ed4f62cf3780157b0b421b7e2f45bd0991c",
+      circuitImplementation: "0x977f217887e085d298cb3819cdad5a0ee35f29b2"
+    }),
+    // 2026-09-19 实测：五家不同运营方，都允许跨域、能读 safe 区块和事件。
+    // 1rpc.io、blastapi、llamarpc 限流严重或不可用，不作默认。
+    rpcs: Object.freeze([
+      "https://mainnet.base.org",
+      "https://base-rpc.publicnode.com",
+      "https://base.drpc.org",
+      "https://8453.rpc.thirdweb.com",
+      "https://base.gateway.tenderly.co"
+    ]),
+    rpcLimits: Object.freeze({
+      "https://mainnet.base.org": Object.freeze({ maxBatch: 10, operator: "coinbase" }),
+      "https://base-rpc.publicnode.com": Object.freeze({ maxBatch: 20, operator: "publicnode" }),
+      "https://base.drpc.org": Object.freeze({ maxBatch: 3, operator: "drpc", callerKeys: true }),
+      "https://8453.rpc.thirdweb.com": Object.freeze({ maxBatch: 10, operator: "drpc", callerKeys: true }),
+      "https://base.gateway.tenderly.co": Object.freeze({ maxBatch: 10, operator: "tenderly", callerKeys: true })
+    })
+  });
+  var NETWORKS = Object.freeze([BSC_MAINNET, XLAYER_MAINNET, BASE_MAINNET]);
+  var HOME_NETWORK = BSC_MAINNET;
+  function networkByArea(area) {
+    if (area === null || area === void 0) return BSC_MAINNET;
+    return NETWORKS.find((n) => n.area !== null && n.area === Number(area)) || null;
+  }
+  function rpcOptionsFor(net, urls) {
+    const list = urls && urls.length ? [...urls] : [...net.rpcs];
+    const limits = net.rpcLimits || {};
+    const maxBatchByUrl = {}, operators = {};
+    for (const u of list) {
+      const l = limits[u];
+      if (!l) continue;
+      if (l.maxBatch) maxBatchByUrl[u] = l.maxBatch;
+      if (l.operator) operators[u] = l.operator;
+    }
+    return { urls: list, maxBatchByUrl, operators, pin: net.pin };
+  }
+  var LIMITS = Object.freeze({
+    rangeBytes: 96 * 1024,
+    // 大文件按 96 KB 分段 readRange（与网关一致，单段约 2M gas 以内）
+    maxFileBytes: 350 * 24e3,
+    // SiteRegistry 单文件上限：350 块 × 24,000 字节
+    maxManifestPaths: 5e3,
+    // 一个站点最多列这么多路径
+    maxTokenId: 10n ** 18n,
+    // 输入里的 #ID 上限（防超长数字）
+    maxCpuIndex: 10n ** 9n
+  });
+
+  // ../../../TapeKit/kernel/src/i18n.js
+  var MESSAGES = {
+    // 状态 / statuses
+    "status.ok": { zh: "已开通", en: "Live" },
+    "status.unpaid": { zh: "这个链上名字还没开通（未付费），官方客户端不显示", en: "This on-chain name is not activated (unpaid); official clients do not display it" },
+    "status.not-opened": { zh: "这枚电路还没有开通容器", en: "This circuit has not opened its container yet" },
+    "status.no-such-cpu": { zh: "没有这个处理器编号", en: "No processor with this number" },
+    "status.no-such-token": { zh: "这个处理器下没有这枚电路（#ID 不存在）", en: "This processor has no such circuit (#ID does not exist)" },
+    "status.not-tapeout": { zh: "这不是 TapeOut 电路容器", en: "Not a TapeOut circuit container" },
+    "status.blocked": { zh: "此客户端已屏蔽这个网站", en: "This client has blocked this site" },
+    "status.store-changed": { zh: "网站仓库合约的实现与客户端钉住的版本不一致，已拒绝读取（等待客户端更新）", en: "The site store contract implementation does not match the version pinned by this client; refusing to read (client update required)" },
+    // 输入 / input
+    "input.empty": { zh: "请输入链上名字、#ID@处理器编号，或容器地址", en: "Enter an on-chain name, #ID@processor, or a container address" },
+    "input.decimal": { zh: "{what}必须是不带前导 0 的十进制数字：{value}", en: "{what} must be a decimal number without leading zeros: {value}" },
+    "input.range": { zh: "{what}超出范围：{value}", en: "{what} out of range: {value}" },
+    "input.unknown": { zh: "看不懂这个地址。例子：4246.0、#4246@0、1.2.344（X Layer）、0x…（容器地址）", en: "Unrecognised address. Examples: 4246.0, #4246@0, 1.2.344 (X Layer), 0x… (container address)" },
+    "input.area": { zh: "没有这个区号：{value}（X Layer 是 2，Base 是 3；BNB 不带区号）", en: "Unknown network area: {value} (X Layer is 2, Base is 3; BNB has none)" },
+    "input.ambiguous": { zh: "这个处理器合约在多条链上都存在（{chains}），请改用带区号的名字：#ID@区号.处理器编号（X Layer 区号 2，Base 区号 3）", en: "This processor contract exists on more than one chain ({chains}); use a name with an area code instead: #ID@area.processor (X Layer is area 2, Base is area 3)" },
+    "input.needs-chain": { zh: "指定区块时必须同时指定链", en: "A block can only be given together with a chain" },
+    "input.wrong-network": { zh: "{name} 不在 {network} 上", en: "{name} is not on {network}" },
+    "what.tokenId": { zh: "#ID", en: "#ID" },
+    "what.cpu": { zh: "处理器编号", en: "processor number" },
+    "what.area": { zh: "区号", en: "network area" },
+    // RPC
+    "rpc.none": { zh: "没有配置 RPC 节点", en: "No RPC nodes configured" },
+    "rpc.conflict": { zh: "节点返回的结果不一致，已拒绝（可能有节点作假或不同步）", en: "Nodes returned different results; rejected (a node may be lying or out of sync)" },
+    "rpc.short": { zh: "可用节点不足：需要 {quorum} 个节点给出相同结果", en: "Not enough nodes: {quorum} nodes must agree" },
+    "rpc.stale": { zh: "有节点报的区块比其他节点落后 {n} 块，可能落后或作假，已拒绝读取（稍后重试）", en: "A node reported a block {n} blocks behind the others (lagging or lying); reading was refused (try again later)" },
+    "rpc.heads": { zh: "可用节点不足：只有 {n} 个节点响应", en: "Not enough nodes: only {n} responded" },
+    // 站点 / site
+    "site.chain-call": { zh: "链上调用失败：{what}", en: "On-chain call failed: {what}" },
+    "site.too-many-files": { zh: "站点文件太多（{n} 个，上限 {max}）", en: "Too many files in this site ({n}, limit {max})" },
+    "site.too-large": { zh: "站点太大（{mb} MB，上限 {max} MB）", en: "Site too large ({mb} MB, limit {max} MB)" },
+    "file.ok": { zh: "与链上一致", en: "matches chain" },
+    "file.no-hash": { zh: "未声明哈希，未校验", en: "no declared hash, unverified" },
+    "file.incomplete": { zh: "与链上记录不符（上传中或已损坏）", en: "does not match the on-chain record (uploading or corrupted)" },
+    "file.too-large": { zh: "文件超过上限", en: "file exceeds the size limit" },
+    "paid.container": { zh: "容器已付费", en: "container paid" },
+    "paid.name": { zh: "名字已付费", en: "name paid" }
+  };
+  var current = "zh";
+  function setLocale(locale) {
+    current = String(locale || "").toLowerCase().startsWith("zh") ? "zh" : "en";
+    return current;
+  }
+  var getLocale = () => current;
+  var fill = (s, vars) => String(s).replace(/\{(\w+)\}/g, (m, k) => vars && k in vars ? String(vars[k]) : m);
+  function t(key, vars) {
+    const m = MESSAGES[key];
+    if (!m) return key;
+    return fill(m[current] || m.en, vars);
+  }
+  function tt(key, vars) {
+    const m = MESSAGES[key];
+    return m ? { zh: fill(m.zh, vars), en: fill(m.en, vars) } : { zh: key, en: key };
+  }
+  var messages = Object.freeze(MESSAGES);
+  var KernelError = class extends Error {
+    constructor(code, key, vars, detail) {
+      const m = tt(key, vars);
+      super(current === "zh" ? m.zh : m.en);
+      this.name = "KernelError";
+      this.code = code;
+      this.messages = m;
+      if (detail !== void 0) this.detail = detail;
+    }
+  };
+
+  // ../../../TapeKit/kernel/src/rpc.js
+  var RpcError = class extends KernelError {
+    constructor(key, vars, detail) {
+      super("rpc", key, vars, detail);
+      this.name = "RpcError";
+    }
+  };
+  var isRevertError = (e) => e && (e.code === 3 || /revert/i.test(String(e.message || "")));
+  function canonicalJson(v) {
+    const norm = (x) => Array.isArray(x) ? x.map(norm) : x && typeof x === "object" ? Object.fromEntries(Object.keys(x).sort().map((k) => [k, norm(x[k])])) : typeof x === "string" ? x.toLowerCase() : x;
+    return JSON.stringify(norm(v));
+  }
+  function shuffled(list) {
+    const a = [...list];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
+  var quantity = (v) => {
+    const n = BigInt(v);
+    if (n < 0n) throw new Error("negative quantity");
+    return n;
+  };
+  function normalizeLogs(value) {
+    if (!Array.isArray(value)) return null;
+    try {
+      return value.map((l) => {
+        if (!l || typeof l !== "object" || !Array.isArray(l.topics)) throw new Error("bad log");
+        return {
+          address: String(l.address).toLowerCase(),
+          topics: l.topics.map((t2) => String(t2).toLowerCase()),
+          data: String(l.data ?? "0x").toLowerCase(),
+          blockNumber: quantity(l.blockNumber).toString(),
+          blockHash: String(l.blockHash).toLowerCase(),
+          transactionHash: String(l.transactionHash).toLowerCase(),
+          logIndex: quantity(l.logIndex).toString()
+        };
+      }).sort((a, b) => {
+        const d = BigInt(a.blockNumber) - BigInt(b.blockNumber) || BigInt(a.logIndex) - BigInt(b.logIndex);
+        return d < 0n ? -1 : d > 0n ? 1 : 0;
+      });
+    } catch {
+      return null;
+    }
+  }
+  function createRpc(o) {
+    const urls = [...new Set(o.urls || [])];
+    if (!urls.length) throw new RpcError("rpc.none");
+    const quorum = Math.max(1, Math.min(o.quorum ?? 2, urls.length));
+    const timeoutMs = o.timeoutMs ?? 1e4;
+    const hedgeMs = o.hedgeMs ?? 1500;
+    const maxBatch = o.maxBatch ?? 20;
+    const pinTag = o.pin === "safe" ? "safe" : "latest";
+    const batchCap = Object.fromEntries(urls.map((u) => [u, Math.max(1, Math.min(maxBatch, o.maxBatchByUrl && o.maxBatchByUrl[u] || maxBatch))]));
+    const SINGLE_CONCURRENCY = 4;
+    const fetchImpl = o.fetchImpl || globalThis.fetch.bind(globalThis);
+    const retries = o.retries ?? 2;
+    const backoffMs = o.backoffMs ?? 400;
+    const cooldownMs = o.cooldownMs ?? 2e4;
+    const headGraceMs = o.headGraceMs ?? 1500;
+    const strictDeadlineMs = o.strictDeadlineMs ?? Math.round(timeoutMs * 1.5);
+    const operatorOf = (url) => {
+      if (o.operators && o.operators[url]) return String(o.operators[url]);
+      let host;
+      try {
+        host = new URL(url).hostname.toLowerCase().replace(/\.+$/, "");
+      } catch {
+        return url;
+      }
+      if (/^\[.*\]$/.test(host) || /^\d{1,3}(\.\d{1,3}){3}$/.test(host)) return host;
+      return host.split(".").slice(-2).join(".");
+    };
+    const operatorCount = new Set(urls.map(operatorOf)).size;
+    const pinNeed = Math.max(1, Math.min(quorum, operatorCount));
+    const strictQuorum = o.strictQuorum !== void 0 ? Math.max(1, o.strictQuorum) : Math.max(2, Math.min(3, operatorCount));
+    const stats = Object.fromEntries(urls.map((u) => [u, { ok: 0, fail: 0, rateLimited: 0, lastMs: null, lastError: null, cooldownUntil: 0 }]));
+    const order = () => {
+      const base = o.shuffle === false ? [...urls] : shuffled(urls);
+      const now2 = Date.now();
+      base.sort((a, b) => (stats[a].cooldownUntil > now2 ? 1 : 0) - (stats[b].cooldownUntil > now2 ? 1 : 0));
+      const seen = /* @__PURE__ */ new Set(), first = [], rest = [];
+      for (const u of base) {
+        const op = operatorOf(u);
+        if (seen.has(op)) rest.push(u);
+        else {
+          seen.add(op);
+          first.push(u);
+        }
+      }
+      return [...first, ...rest];
+    };
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    async function postOnce(url, body) {
+      const ctl = new AbortController();
+      const t2 = setTimeout(() => ctl.abort(), timeoutMs);
+      const t0 = Date.now();
+      try {
+        const r = await fetchImpl(url, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body), signal: ctl.signal });
+        if (!r.ok) {
+          const e = new Error("HTTP " + r.status);
+          e.status = r.status;
+          throw e;
+        }
+        const j = await r.json();
+        stats[url].ok++;
+        stats[url].lastMs = Date.now() - t0;
+        stats[url].lastError = null;
+        return j;
+      } catch (e) {
+        stats[url].fail++;
+        stats[url].lastMs = Date.now() - t0;
+        stats[url].lastError = String(e?.message || e);
+        if (e && e.status === 429) {
+          stats[url].rateLimited++;
+          stats[url].cooldownUntil = Date.now() + cooldownMs;
+        }
+        throw e;
+      } finally {
+        clearTimeout(t2);
+      }
+    }
+    async function post(url, body) {
+      let last;
+      for (let i = 0; ; i++) {
+        try {
+          return await postOnce(url, body);
+        } catch (e) {
+          last = e;
+          const retriable = e && (e.status === 429 || e.status >= 500 && e.status <= 599 || !e.status && e.name !== "AbortError");
+          if (!retriable || i >= retries) throw last;
+          await sleep(backoffMs * 2 ** i * (0.7 + Math.random() * 0.6));
+        }
+      }
+    }
+    const refusalText = /batch|too many|maximum \d+|exceeds? .*(limit|size)/i;
+    const isRefusal = (e) => e && typeof e === "object" && !isRevertError(e) && e.code !== -32005 && !/rate.?limit/i.test(String(e.message || "")) && (e.code === -32014 || e.code === -32600 || refusalText.test(String(e.message || "")));
+    const batchRefused = (resp, n) => n > 1 && (!Array.isArray(resp) && resp && typeof resp === "object" && isRefusal(resp.error) || Array.isArray(resp) && resp.length > 0 && resp.every((x) => x && isRefusal(x.error)));
+    async function postSingles(url, part) {
+      const res = new Array(part.length);
+      let k = 0;
+      const worker = async () => {
+        while (k < part.length) {
+          const i = k++;
+          try {
+            res[i] = await post(url, part[i]);
+          } catch (e) {
+            res[i] = { id: part[i].id, transport: String(e?.message || e) };
+          }
+        }
+      };
+      await Promise.all(Array.from({ length: Math.min(SINGLE_CONCURRENCY, part.length) }, worker));
+      return res;
+    }
+    async function runOn(url, reqs) {
+      const out = [];
+      for (let i = 0; i < reqs.length; ) {
+        const size2 = batchCap[url];
+        const src = reqs.slice(i, i + (size2 === 1 ? 20 : size2));
+        const part = src.map((q, k) => ({ jsonrpc: "2.0", id: i + k + 1, method: q.method, params: q.params }));
+        if (size2 === 1) {
+          const resp2 = await postSingles(url, part);
+          pushResults(out, src, part, resp2.map((x, k) => x && x.transport ? { id: part[k].id, error: { message: x.transport } } : x));
+          i += part.length;
+          continue;
+        }
+        let resp;
+        for (let attempt = 0; ; attempt++) {
+          try {
+            resp = await post(url, part);
+          } catch (e) {
+            resp = e;
+            break;
+          }
+          const limited = Array.isArray(resp) && resp.length < part.length && resp.some((x) => x && x.id === null && x.error && x.error.code === -32005);
+          if (!limited || attempt >= 3) break;
+          stats[url].rateLimited++;
+          await sleep(600 * 2 ** attempt * (0.7 + Math.random() * 0.6));
+        }
+        if (!(resp instanceof Error) && batchRefused(resp, part.length)) {
+          batchCap[url] = Math.max(1, Math.min(batchCap[url], Math.floor(part.length / 2)));
+          continue;
+        }
+        i += part.length;
+        if (resp instanceof Error) {
+          for (let k = 0; k < part.length; k++) out.push({ err: String(resp?.message || resp) });
+          continue;
+        }
+        if (!Array.isArray(resp)) {
+          for (let k = 0; k < part.length; k++) out.push({ err: "bad batch response" });
+          continue;
+        }
+        pushResults(out, src, part, resp);
+      }
+      return out;
+    }
+    function pushResults(out, src, part, resp) {
+      const byId = new Map(resp.filter((x) => x && typeof x === "object").map((x) => [x.id, x]));
+      for (const [k, q] of part.entries()) try {
+        const x = byId.get(q.id);
+        const normalize2 = src[k].normalize;
+        if (!x) out.push({ err: "missing response" });
+        else if (x.error) out.push(isRevertError(x.error) ? { revert: true, data: typeof x.error.data === "string" ? x.error.data : "0x" } : { err: String(x.error.message || "rpc error") });
+        else if (q.method === "eth_getLogs") {
+          const logs = normalizeLogs(x.result);
+          out.push(logs ? { ok: true, value: JSON.stringify(logs), logs } : { err: "bad logs" });
+        } else if (typeof x.result === "string") out.push({ ok: true, value: x.result });
+        else if (x.result === null && q.method === "eth_getBlockByNumber" && /^0x[0-9a-f]+$/i.test(String(q.params?.[0] ?? ""))) out.push({ err: "block not available on this node" });
+        else if (x.result === null || typeof x.result === "boolean" || typeof x.result === "number" || typeof x.result === "object") {
+          const picked = normalize2 && x.result !== null ? normalize2(x.result) : x.result;
+          if (picked === void 0) throw new Error("normalize returned nothing");
+          out.push({ ok: true, value: canonicalJson(picked), raw: picked });
+        } else out.push({ err: "bad result" });
+      } catch (e) {
+        out.push({ err: "bad result: " + String(e?.message || e) });
+      }
+    }
+    function tally(outcomes, need = quorum) {
+      const groups = /* @__PURE__ */ new Map();
+      for (const oc of outcomes) {
+        if (!oc || oc.err) continue;
+        const key = oc.ok ? "v:" + oc.value.toLowerCase() : "r:" + String(oc.data).toLowerCase();
+        const g2 = groups.get(key) || { ops: /* @__PURE__ */ new Set(), oc };
+        g2.ops.add(oc.op);
+        groups.set(key, g2);
+      }
+      if (groups.size > 1) return { status: "conflict" };
+      if (!groups.size) return { status: "short" };
+      const [g] = groups.values();
+      const { op: _op, ...outcome } = g.oc;
+      return g.ops.size >= need ? { status: "ok", outcome } : { status: "short" };
+    }
+    function many(reqs, opts = {}) {
+      if (!reqs.length) return Promise.resolve([]);
+      const nodes = order();
+      const answers = [];
+      let next = 0, inflight = 0, done = false, timer = null, deadline = null;
+      return new Promise((resolve, reject) => {
+        const finish = (fn, v) => {
+          if (done) return;
+          done = true;
+          clearTimeout(timer);
+          clearTimeout(deadline);
+          fn(v);
+        };
+        const need = opts.all ? strictQuorum : quorum;
+        const shortError = () => {
+          const errs = answers.flatMap((a) => a.filter((x) => x && x.err).map((x) => x.err));
+          return new RpcError("rpc.short", { quorum: need }, { errors: [...new Set(errs)].slice(0, 5) });
+        };
+        const launch = () => {
+          if (next >= nodes.length) return false;
+          const url = nodes[next++];
+          inflight++;
+          const op = operatorOf(url);
+          runOn(url, reqs).catch((e) => reqs.map(() => ({ err: String(e?.message || e) }))).then((a) => {
+            inflight--;
+            answers.push(a.map((x) => x ? { ...x, op } : x));
+            check();
+          });
+          return true;
+        };
+        const verdictsNow = () => reqs.map((_, i) => tally(answers.map((a) => a[i]), need));
+        const check = (final = false) => {
+          if (done) return;
+          const verdicts = verdictsNow();
+          const bad = verdicts.findIndex((v) => v.status === "conflict");
+          if (bad >= 0) return finish(reject, new RpcError("rpc.conflict", {}, { request: reqs[bad] }));
+          if (opts.all) {
+            if (inflight > 0 && !final) return;
+            return verdicts.every((v) => v.status === "ok") ? finish(resolve, verdicts.map((v) => v.outcome)) : finish(reject, shortError());
+          }
+          if (verdicts.every((v) => v.status === "ok")) return finish(resolve, verdicts.map((v) => v.outcome));
+          if (inflight === 0 && !launch()) finish(reject, shortError());
+        };
+        if (opts.all) {
+          deadline = setTimeout(() => check(true), strictDeadlineMs);
+          while (launch()) ;
+          return;
+        }
+        const arm = () => {
+          timer = setTimeout(() => {
+            if (!done && launch()) arm();
+          }, hedgeMs);
+        };
+        for (let i = 0; i < quorum; i++) launch();
+        arm();
+      });
+    }
+    let lastPinLag = 0n;
+    async function pinBlock() {
+      const heads = [];
+      await new Promise((resolve) => {
+        let pending = urls.length, grace = null;
+        const done = () => {
+          clearTimeout(grace);
+          resolve();
+        };
+        for (const u of urls) {
+          const req = pinTag === "safe" ? { method: "eth_getBlockByNumber", params: ["safe", false], normalize: (b) => ({ number: String(b.number) }) } : { method: "eth_blockNumber", params: [] };
+          runOn(u, [req]).then((r) => {
+            const x = r[0];
+            const v = x && x.ok ? pinTag === "safe" ? x.raw && x.raw.number : x.value : null;
+            if (typeof v === "string" && /^0x[0-9a-f]+$/i.test(v)) heads.push({ op: operatorOf(u), n: BigInt(v) });
+            pending--;
+            if (pending === 0) done();
+            else if (new Set(heads.map((h) => h.op)).size >= pinNeed && !grace) grace = setTimeout(done, headGraceMs);
+          });
+        }
+      });
+      const byOp = /* @__PURE__ */ new Map();
+      for (const h of heads) if (!byOp.has(h.op) || h.n < byOp.get(h.op)) byOp.set(h.op, h.n);
+      const ops = [...byOp.values()].sort((a, b) => a > b ? -1 : a < b ? 1 : 0);
+      if (ops.length < pinNeed) throw new RpcError("rpc.heads", { n: ops.length });
+      const n = pinTag === "safe" ? ops[pinNeed - 1] : ops[pinNeed - 1] - 2n;
+      lastPinLag = ops[0] - n;
+      return "0x" + n.toString(16);
+    }
+    const calls = (items, block) => many(items.map((it) => ({ method: "eth_call", params: [{ to: it.to, data: it.data }, block] })));
+    const storageAt = (addr, slot, block) => many([{ method: "eth_getStorageAt", params: [addr, slot, block] }]).then((r) => r[0]);
+    const getLogs = (filter, opts) => many([{ method: "eth_getLogs", params: [filter] }], opts).then((r) => r[0].ok ? r[0].logs : []);
+    const getStats = () => Object.fromEntries(urls.map((u) => [u, { ...stats[u] }]));
+    return { urls, quorum, strictQuorum, operatorCount, operatorOf, many, calls, storageAt, pinBlock, pinLag: () => lastPinLag, getLogs, stats: getStats, pin: pinTag, batchLimits: () => ({ ...batchCap }) };
+  }
+
+  // ../../../TapeKit/kernel/src/abi.js
+  var enc = new TextEncoder();
+  var dec = new TextDecoder("utf-8", { fatal: true });
+  var MAX_DYNAMIC = 16 * 1024 * 1024;
+  var MAX_ARRAY = 1e5;
+  function hexToBytes(hex) {
+    const h = String(hex).startsWith("0x") ? String(hex).slice(2) : String(hex);
+    if (h.length % 2 !== 0 || !/^[0-9a-fA-F]*$/.test(h)) throw new Error("abi: bad hex");
+    const out = new Uint8Array(h.length / 2);
+    for (let i = 0; i < out.length; i++) out[i] = parseInt(h.substr(i * 2, 2), 16);
+    return out;
+  }
+  var bytesToHex = (b) => "0x" + Array.from(b, (x) => x.toString(16).padStart(2, "0")).join("");
+  var word = (n) => {
+    const v = BigInt(n);
+    if (v < 0n || v >= 1n << 256n) throw new Error("abi: uint out of range");
+    return v.toString(16).padStart(64, "0");
+  };
+  function encodeStatic(type, value) {
+    switch (type) {
+      case "address": {
+        if (!/^0x[0-9a-fA-F]{40}$/.test(value)) throw new Error("abi: bad address");
+        return value.slice(2).toLowerCase().padStart(64, "0");
+      }
+      case "uint256":
+        return word(value);
+      case "bool":
+        return word(value ? 1 : 0);
+      case "bytes32": {
+        const b = hexToBytes(value);
+        if (b.length !== 32) throw new Error("abi: bytes32 length");
+        return bytesToHex(b).slice(2);
+      }
+      default:
+        throw new Error("abi: unsupported type " + type);
+    }
+  }
+  function encodeCall(selector, types = [], values = []) {
+    if (!/^0x[0-9a-f]{8}$/.test(selector)) throw new Error("abi: bad selector");
+    if (types.length !== values.length) throw new Error("abi: arity");
+    let head = "";
+    let tail = "";
+    const headBytes = types.length * 32;
+    types.forEach((t2, i) => {
+      if (t2 === "string" || t2 === "bytes") {
+        const b = t2 === "string" ? enc.encode(String(values[i])) : hexToBytes(values[i]);
+        head += word(headBytes + tail.length / 2);
+        tail += word(b.length) + bytesToHex(b).slice(2).padEnd(Math.ceil(b.length / 32) * 64, "0");
+      } else {
+        head += encodeStatic(t2, values[i]);
+      }
+    });
+    return selector + head + tail;
+  }
+  function u256(b, off) {
+    if (!Number.isSafeInteger(off) || off < 0 || off + 32 > b.length) throw new Error("abi: out of bounds");
+    let n = 0n;
+    for (let i = 0; i < 32; i++) n = n << 8n | BigInt(b[off + i]);
+    return n;
+  }
+  function toOffset(n) {
+    if (n > BigInt(Number.MAX_SAFE_INTEGER)) throw new Error("abi: offset too large");
+    return Number(n);
+  }
+  function bytesAt(b, pos) {
+    const len = toOffset(u256(b, pos));
+    if (len > MAX_DYNAMIC || pos + 32 + len > b.length) throw new Error("abi: bad dynamic length");
+    return b.slice(pos + 32, pos + 32 + len);
+  }
+  function readType(b, type, off) {
+    switch (type) {
+      case "uint":
+        return u256(b, off);
+      case "bool": {
+        const n = u256(b, off);
+        if (n > 1n) throw new Error("abi: bad bool");
+        return n === 1n;
+      }
+      case "address": {
+        const n = u256(b, off);
+        if (n >> 160n) throw new Error("abi: dirty address");
+        return "0x" + n.toString(16).padStart(40, "0");
+      }
+      case "bytes32": {
+        if (off + 32 > b.length) throw new Error("abi: out of bounds");
+        return bytesToHex(b.subarray(off, off + 32));
+      }
+      case "bytes":
+        return bytesAt(b, toOffset(u256(b, off)));
+      case "string":
+        return dec.decode(bytesAt(b, toOffset(u256(b, off))));
+      case "string[]": {
+        const p = toOffset(u256(b, off));
+        const n = toOffset(u256(b, p));
+        if (n > MAX_ARRAY) throw new Error("abi: array too long");
+        const base = p + 32;
+        const out = [];
+        for (let i = 0; i < n; i++) out.push(dec.decode(bytesAt(b, base + toOffset(u256(b, base + i * 32)))));
+        return out;
+      }
+      default:
+        throw new Error("abi: unsupported output type " + type);
+    }
+  }
+  function decodeResult(types, hex) {
+    const b = hexToBytes(hex);
+    if (b.length < types.length * 32) throw new Error("abi: short return data");
+    return types.map((t2, i) => readType(b, t2, i * 32));
+  }
+
+  // ../../../TapeKit/kernel/src/selectors.js
+  var SIG = Object.freeze({
+    cpuCount: "cpuCount()",
+    cpuAt: "cpuAt(uint256)",
+    isCPU: "isCPU(address)",
+    accountOf: "accountOf(address,uint256)",
+    isOpened: "isOpened(address,uint256)",
+    token: "token()",
+    ownerOf: "ownerOf(uint256)",
+    name: "name()",
+    fileInfo: "fileInfo(address,string)",
+    read: "read(address,string)",
+    readRange: "readRange(address,string,uint256,uint256)",
+    pathCount: "pathCount(address)",
+    pathsRange: "pathsRange(address,uint256,uint256)",
+    fallbackPath: "fallbackPath(address)",
+    isLive: "isLive(string,address)",
+    paidUntil: "paidUntil(bytes32,address)",
+    monthlyFee: "monthlyFee()",
+    containerPaidUntil: "containerPaidUntil(address)",
+    isContainerLive: "isContainerLive(address)"
+  });
+  var SEL = Object.freeze({
+    cpuCount: "0xa94da8a7",
+    cpuAt: "0x4bc7cbbd",
+    isCPU: "0x5f5a364f",
+    accountOf: "0x0c1905e5",
+    isOpened: "0x8b508494",
+    token: "0xfc0c546a",
+    ownerOf: "0x6352211e",
+    name: "0x06fdde03",
+    fileInfo: "0x6c609107",
+    read: "0xccaa7afb",
+    readRange: "0x15a4cae2",
+    pathCount: "0xb554782b",
+    pathsRange: "0xb056072c",
+    fallbackPath: "0xa76c7713",
+    isLive: "0xd6b062cd",
+    paidUntil: "0x2110540f",
+    monthlyFee: "0x8cfd3e40",
+    containerPaidUntil: "0x9ebfd859",
+    isContainerLive: "0xdcca979e"
+  });
+  var EVENT_SIG = Object.freeze({
+    FileSet: "FileSet(address,string,uint32,bytes32,string)",
+    FileRemoved: "FileRemoved(address,string)",
+    FallbackSet: "FallbackSet(address,string)"
+  });
+  var TOPIC = Object.freeze({
+    FileSet: "0x13b9b0f05b22c496a9d9a29e7041c56c04670dc98ab327448870f18eb07b6773",
+    FileRemoved: "0x8598a19145ba7b62366f9f3e3ceca438df1e575ffa3bef982ed120041131d786",
+    FallbackSet: "0x47296cb5a49fb9ae062bb59d2c8932790144b5997d4a4f76f76207bb527f1be0"
+  });
+
+  // ../../../TapeKit/kernel/src/name.js
+  var InputError = class extends KernelError {
+    constructor(key, vars) {
+      super("input", key, vars);
+      this.name = "InputError";
+    }
+  };
+  var DEC = /^(0|[1-9][0-9]*)$/;
+  function decimal(s, whatKey, min, max) {
+    if (!DEC.test(s)) throw new InputError("input.decimal", { what: t(whatKey), value: s });
+    const n = BigInt(s);
+    if (n < min || n > max) throw new InputError("input.range", { what: t(whatKey), value: s });
+    return n;
+  }
+  function splitPath(rest) {
+    if (!rest) return "";
+    return rest.replace(/^\/+/, "").split(/[?#]/)[0];
+  }
+  function areaOf(s) {
+    if (s === void 0) return null;
+    const n = decimal(s, "what.area", 0n, 1000000n);
+    if (!networkByArea(Number(n))) throw new InputError("input.area", { value: s });
+    return Number(n);
+  }
+  var nameOf = (id, area, cpu, rest) => ({
+    kind: "name",
+    tokenId: decimal(id, "what.tokenId", 1n, LIMITS.maxTokenId),
+    area: areaOf(area),
+    cpu: decimal(cpu, "what.cpu", 0n, LIMITS.maxCpuIndex),
+    path: splitPath(rest)
+  });
+  function parseInput(raw) {
+    let s = String(raw ?? "").trim();
+    if (!s) throw new InputError("input.empty");
+    s = s.replace(/^(web\+)?tape:\/\//i, "");
+    let m;
+    if (m = s.match(/^#?([0-9]+)@(?:([0-9]+)\.)?([0-9]+)(\/.*)?$/)) return nameOf(m[1], m[2], m[3], m[4]);
+    if (m = s.match(/^([0-9]+)(?:\.([0-9]+))?\.([0-9]+)(?:\.tape)?\.?(\/.*)?$/i)) return nameOf(m[1], m[2], m[3], m[4]);
+    if (m = s.match(/^(0x[0-9a-fA-F]{40})#([0-9]+)(\/.*)?$/)) {
+      return { kind: "circuit", circuits: m[1].toLowerCase(), tokenId: decimal(m[2], "what.tokenId", 1n, LIMITS.maxTokenId), path: splitPath(m[3]) };
+    }
+    if (m = s.match(/^(0x[0-9a-fA-F]{40})(\/.*)?$/)) {
+      return { kind: "container", container: m[1].toLowerCase(), path: splitPath(m[2]) };
+    }
+    throw new InputError("input.unknown");
+  }
+  var areaPart = (area) => area === null || area === void 0 ? "" : `${Number(area)}.`;
+  var formatShort = (tokenId, cpu, area = null) => `${BigInt(tokenId)}.${areaPart(area)}${BigInt(cpu)}`;
+  var formatName = (tokenId, cpu, suffix = "tape", area = null) => `${formatShort(tokenId, cpu, area)}.${suffix}`;
+  var formatUrl = (tokenId, cpu, path = "", suffix = "tape", area = null) => `tape://${formatName(tokenId, cpu, suffix, area)}/${path}`;
+  var formatLabel = (tokenId, cpu, area = null) => `#${BigInt(tokenId)}@${areaPart(area)}${BigInt(cpu)}`;
+
+  // ../../../TapeKit/kernel/src/cache.js
+  var enc2 = new TextEncoder();
+  var dec2 = new TextDecoder();
+  var size = (bytes, meta) => (bytes ? bytes.length : 0) + enc2.encode(JSON.stringify(meta || null)).length + 64;
+  var tick = 0;
+  var now = () => Date.now() * 1e3 + (tick = (tick + 1) % 1e3);
+  function createMemoryCache({ maxBytes = 64 * 1024 * 1024 } = {}) {
+    const map = /* @__PURE__ */ new Map();
+    let total = 0;
+    return {
+      kind: "memory",
+      async get(key) {
+        const v = map.get(key);
+        if (!v) return void 0;
+        map.delete(key);
+        map.set(key, v);
+        return { meta: v.meta, bytes: v.bytes };
+      },
+      async set(key, meta, bytes) {
+        const n = size(bytes, meta);
+        if (n > maxBytes / 2) return;
+        const old = map.get(key);
+        if (old) {
+          total -= old.n;
+          map.delete(key);
+        }
+        map.set(key, { meta, bytes, n });
+        total += n;
+        while (total > maxBytes && map.size) {
+          const [k, v] = map.entries().next().value;
+          map.delete(k);
+          total -= v.n;
+        }
+      },
+      async delete(key) {
+        const v = map.get(key);
+        if (v) {
+          total -= v.n;
+          map.delete(key);
+        }
+      },
+      async clear() {
+        map.clear();
+        total = 0;
+      }
+    };
+  }
+  async function createIdbCache(name = "hashport-kernel", { maxBytes = 256 * 1024 * 1024 } = {}) {
+    const db = await new Promise((res, rej) => {
+      const req2 = indexedDB.open(name, 1);
+      req2.onupgradeneeded = () => {
+        const s = req2.result.createObjectStore("entries", { keyPath: "key" });
+        s.createIndex("at", "at");
+      };
+      req2.onsuccess = () => res(req2.result);
+      req2.onerror = () => rej(req2.error);
+    });
+    const tx = (mode, fn) => new Promise((res, rej) => {
+      const t2 = db.transaction("entries", mode);
+      const out = fn(t2.objectStore("entries"));
+      t2.oncomplete = () => res(out && "result" in out ? out.result : out);
+      t2.onerror = () => rej(t2.error);
+      t2.onabort = () => rej(t2.error);
+    });
+    const req = (mode, fn) => new Promise((res, rej) => {
+      const t2 = db.transaction("entries", mode);
+      const r = fn(t2.objectStore("entries"));
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => rej(r.error);
+    });
+    async function totalBytes() {
+      let s = 0;
+      const all = await req("readonly", (st) => st.getAll());
+      for (const e of all) s += e.n;
+      return s;
+    }
+    async function evict() {
+      if (await totalBytes() <= maxBytes) return;
+      const all = (await req("readonly", (st) => st.getAll())).sort((a, b) => a.at - b.at);
+      let t2 = all.reduce((s, e) => s + e.n, 0);
+      for (const e of all) {
+        if (t2 <= maxBytes) break;
+        await req("readwrite", (st) => st.delete(e.key));
+        t2 -= e.n;
+      }
+    }
+    return {
+      kind: "idb",
+      name,
+      async get(key) {
+        const e = await req("readonly", (st) => st.get(key));
+        if (!e) return void 0;
+        req("readwrite", (st) => st.put({ ...e, at: now() })).catch(() => {
+        });
+        return { meta: e.meta, bytes: e.bytes };
+      },
+      async set(key, meta, bytes) {
+        const n = size(bytes, meta);
+        if (n > maxBytes / 2) return;
+        await req("readwrite", (st) => st.put({ key, meta: meta ?? null, bytes: bytes || new Uint8Array(), n, at: now() }));
+        await evict();
+      },
+      async delete(key) {
+        await req("readwrite", (st) => st.delete(key));
+      },
+      async clear() {
+        await tx("readwrite", (st) => st.clear());
+      }
+    };
+  }
+
+  // ../../../TapeKit/kernel/src/identity.js
+  var callRequest = (it, block) => ({ method: "eth_call", params: [{ to: it.to, data: encodeCall(it.sel, it.types || [], it.values || []) }, block] });
+  var decodeOutcome = (out, oc) => {
+    if (!oc.ok) return { revert: true, data: oc.data };
+    if (oc.value === "0x") return { revert: true, empty: true };
+    return decodeResult(out, oc.value);
+  };
+  function createIdentity(o) {
+    const net = { ...BSC_MAINNET, ...o.network || {} };
+    const rpc = o.rpc;
+    const cache2 = o.cache || createMemoryCache({ maxBytes: 1024 * 1024 });
+    const fail = o.fail || ((what) => {
+      throw new KernelError("chain", "site.chain-call", { what });
+    });
+    const cpuByIndex = /* @__PURE__ */ new Map();
+    const indexByCpu = /* @__PURE__ */ new Map();
+    let cpuTableLoaded = false;
+    const CPU_KEY = `cpu-index:v1:${net.chainId}:${net.factory}`;
+    const readOpts = o.strict ? { all: true } : void 0;
+    async function batch(items, block) {
+      const outcomes = await rpc.many(items.map((it) => callRequest(it, block)), readOpts);
+      return outcomes.map((oc, i) => decodeOutcome(items[i].out, oc));
+    }
+    const one = async (item, block) => (await batch([item], block))[0];
+    const must = (r, what) => {
+      if (r.revert) fail(what);
+      return r;
+    };
+    async function loadCpuTable() {
+      if (cpuTableLoaded) return;
+      cpuTableLoaded = true;
+      const saved = await cache2.get(CPU_KEY);
+      if (saved && saved.meta && Array.isArray(saved.meta.cpus)) saved.meta.cpus.forEach((a, i) => {
+        if (a) {
+          cpuByIndex.set(i, a);
+          indexByCpu.set(a, BigInt(i));
+        }
+      });
+    }
+    async function saveCpuTable() {
+      const n = Math.max(-1, ...cpuByIndex.keys()) + 1;
+      const cpus = Array.from({ length: n }, (_, i) => cpuByIndex.get(i) || null);
+      await cache2.set(CPU_KEY, { cpus, savedAt: Date.now() }, new Uint8Array());
+    }
+    async function cpuIndexOf(circuits, block) {
+      const key = circuits.toLowerCase();
+      await loadCpuTable();
+      if (indexByCpu.has(key)) return indexByCpu.get(key);
+      const [count] = must(await one({ to: net.factory, sel: SEL.cpuCount, out: ["uint"] }, block), "cpuCount");
+      const n = Number(count);
+      let changed = false;
+      for (let start = 0; start < n; start += 80) {
+        const idx = [];
+        for (let i = start; i < Math.min(n, start + 80); i++) if (!cpuByIndex.has(i)) idx.push(i);
+        if (!idx.length) continue;
+        const rs = await batch(idx.map((i) => ({ to: net.factory, sel: SEL.cpuAt, types: ["uint256"], values: [i], out: ["address"] })), block);
+        rs.forEach((r, k) => {
+          if (!r.revert) {
+            cpuByIndex.set(idx[k], r[0]);
+            indexByCpu.set(r[0], BigInt(idx[k]));
+            changed = true;
+          }
+        });
+        if (indexByCpu.has(key)) break;
+      }
+      if (changed) await saveCpuTable();
+      return indexByCpu.has(key) ? indexByCpu.get(key) : null;
+    }
+    async function cpuAt(cpu, block) {
+      await loadCpuTable();
+      const i = Number(cpu);
+      if (cpuByIndex.has(i)) return cpuByIndex.get(i);
+      const r = await one({ to: net.factory, sel: SEL.cpuAt, types: ["uint256"], values: [cpu], out: ["address"] }, block);
+      if (r.revert) return null;
+      cpuByIndex.set(i, r[0]);
+      indexByCpu.set(r[0], BigInt(i));
+      await saveCpuTable();
+      return r[0];
+    }
+    async function resolveIdentity(parsed, block, opts = {}) {
+      if (parsed.kind === "name" && (parsed.area ?? null) !== (net.area ?? null)) {
+        throw new InputError("input.wrong-network", { name: formatLabel(parsed.tokenId, parsed.cpu, parsed.area), network: net.name || `chain ${net.chainId}` });
+      }
+      const prepend = opts.prepend || [];
+      const first = parsed.kind === "name" ? [{ to: net.factory, sel: SEL.cpuCount, out: ["uint"] }, { to: net.factory, sel: SEL.cpuAt, types: ["uint256"], values: [parsed.cpu], out: ["address"] }] : parsed.kind === "container" ? [{ to: parsed.container, sel: SEL.token, out: ["uint", "address", "uint"] }] : [{ to: net.factory, sel: SEL.isCPU, types: ["address"], values: [parsed.circuits], out: ["bool"] }];
+      const outcomes = await rpc.many([...prepend, ...first.map((it) => callRequest(it, block))], readOpts);
+      const prepended = outcomes.slice(0, prepend.length);
+      if (opts.afterFirst && opts.afterFirst(prepended) === false) return { prepended, identity: null };
+      const r1 = outcomes.slice(prepend.length).map((oc, i) => decodeOutcome(first[i].out, oc));
+      let circuits, tokenId, cpu, container = null;
+      if (parsed.kind === "name") {
+        tokenId = parsed.tokenId;
+        cpu = parsed.cpu;
+        const [count] = must(r1[0], "cpuCount");
+        if (cpu >= count || r1[1].revert) return { prepended, identity: { tokenId, cpu, status: "no-such-cpu" } };
+        [circuits] = r1[1];
+        await loadCpuTable();
+        if (!cpuByIndex.has(Number(cpu))) {
+          cpuByIndex.set(Number(cpu), circuits);
+          indexByCpu.set(circuits, cpu);
+          await saveCpuTable();
+        }
+      } else {
+        if (parsed.kind === "circuit") {
+          circuits = parsed.circuits;
+          tokenId = parsed.tokenId;
+          if (r1[0].revert || !r1[0][0]) return { prepended, identity: { circuits, status: "not-tapeout" } };
+        } else {
+          container = parsed.container;
+          const tk = r1[0];
+          if (tk.revert || tk[0] !== BigInt(net.chainId)) return { prepended, identity: { container, status: "not-tapeout" } };
+          [, circuits, tokenId] = tk;
+          const isCpu = await one({ to: net.factory, sel: SEL.isCPU, types: ["address"], values: [circuits], out: ["bool"] }, block);
+          if (isCpu.revert || !isCpu[0]) return { prepended, identity: { container, circuits, status: "not-tapeout" } };
+        }
+        cpu = await cpuIndexOf(circuits, block);
+        if (cpu === null) return { prepended, identity: { container, circuits, status: "not-tapeout" } };
+      }
+      const [acct, opened, owner, cpuName] = await batch([
+        { to: net.opener, sel: SEL.accountOf, types: ["address", "uint256"], values: [circuits, tokenId], out: ["address"] },
+        { to: net.opener, sel: SEL.isOpened, types: ["address", "uint256"], values: [circuits, tokenId], out: ["bool"] },
+        { to: circuits, sel: SEL.ownerOf, types: ["uint256"], values: [tokenId], out: ["address"] },
+        { to: circuits, sel: SEL.name, out: ["string"] }
+      ], block);
+      const derived = must(acct, "accountOf")[0];
+      if (container && derived !== container) return { prepended, identity: { container, circuits, status: "not-tapeout" } };
+      const identity = {
+        name: formatName(tokenId, cpu, net.nameSuffix, net.area),
+        area: net.area ?? null,
+        chainId: net.chainId,
+        cpu,
+        cpuName: cpuName.revert ? "" : cpuName[0],
+        circuits,
+        tokenId,
+        container: derived,
+        holder: owner.revert ? null : owner[0],
+        opened: !opened.revert && opened[0] === true,
+        status: owner.revert ? "no-such-token" : "ok"
+      };
+      return { prepended, identity };
+    }
+    return { network: net, batch, one, cpuAt, cpuIndexOf, resolveIdentity };
+  }
+
+  // ../../../TapeKit/kernel/src/path.js
+  function normalizePath(raw) {
+    let p;
+    try {
+      p = decodeURIComponent(String(raw ?? "").split(/[?#]/)[0]);
+    } catch {
+      return null;
+    }
+    p = p.normalize("NFC").replace(/\/+/g, "/");
+    if (/[\0-\x1f\x7f]/.test(p)) return null;
+    if (p.split("/").some((seg) => seg === ".." || seg === ".")) return null;
+    if (p === "" || p === "/" || p.endsWith("/")) p = p.replace(/\/?$/, "/") + "index.html";
+    return p.replace(/^\/+/, "");
+  }
+  var hasExtension = (p) => /\.[^/]+$/.test(p.split("/").pop() || "");
+  function resolvePath(requested, pathSet, fallbackPath) {
+    const p = normalizePath(requested);
+    if (p === null) return null;
+    if (pathSet.has(p)) return p;
+    if (!hasExtension(p)) {
+      const idx = p + "/index.html";
+      if (pathSet.has(idx)) return idx;
+      if (fallbackPath && pathSet.has(fallbackPath)) return fallbackPath;
+    }
+    return null;
+  }
+  function safeContentType(ct) {
+    const s = String(ct || "").replace(/[^\w.+/;=\- ]/g, "").slice(0, 100);
+    return /^[\w.+-]+\/[\w.+-]+/.test(s) ? s : "application/octet-stream";
+  }
+
+  // ../../../TapeKit/kernel/src/sha.js
+  async function subtle() {
+    if (globalThis.crypto?.subtle) return globalThis.crypto.subtle;
+    const { webcrypto } = await import("node:crypto");
+    return webcrypto.subtle;
+  }
+  async function sha256Hex(bytes) {
+    const d = new Uint8Array(await (await subtle()).digest("SHA-256", bytes));
+    return "0x" + Array.from(d, (x) => x.toString(16).padStart(2, "0")).join("");
+  }
+
+  // ../../../TapeKit/kernel/src/keccak.js
+  var MASK = (1n << 64n) - 1n;
+  var RC = [
+    0x0000000000000001n,
+    0x0000000000008082n,
+    0x800000000000808an,
+    0x8000000080008000n,
+    0x000000000000808bn,
+    0x0000000080000001n,
+    0x8000000080008081n,
+    0x8000000000008009n,
+    0x000000000000008an,
+    0x0000000000000088n,
+    0x0000000080008009n,
+    0x000000008000000an,
+    0x000000008000808bn,
+    0x800000000000008bn,
+    0x8000000000008089n,
+    0x8000000000008003n,
+    0x8000000000008002n,
+    0x8000000000000080n,
+    0x000000000000800an,
+    0x800000008000000an,
+    0x8000000080008081n,
+    0x8000000000008080n,
+    0x0000000080000001n,
+    0x8000000080008008n
+  ];
+  var ROT = [0, 1, 62, 28, 27, 36, 44, 6, 55, 20, 3, 10, 43, 25, 39, 41, 45, 15, 21, 8, 18, 2, 61, 56, 14];
+  var rotl = (v, n) => n === 0 ? v : (v << BigInt(n) | v >> BigInt(64 - n)) & MASK;
+  function keccakF(A) {
+    const C = new Array(5), B = new Array(25);
+    for (let round = 0; round < 24; round++) {
+      for (let x = 0; x < 5; x++) C[x] = A[x] ^ A[x + 5] ^ A[x + 10] ^ A[x + 15] ^ A[x + 20];
+      for (let x = 0; x < 5; x++) {
+        const d = C[(x + 4) % 5] ^ rotl(C[(x + 1) % 5], 1);
+        for (let y = 0; y < 25; y += 5) A[x + y] ^= d;
+      }
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) B[y + 5 * ((2 * x + 3 * y) % 5)] = rotl(A[x + 5 * y], ROT[x + 5 * y]);
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) {
+        A[x + 5 * y] = B[x + 5 * y] ^ ~B[(x + 1) % 5 + 5 * y] & MASK & B[(x + 2) % 5 + 5 * y];
+      }
+      A[0] ^= RC[round];
+    }
+  }
+  function keccak256(input) {
+    const data = typeof input === "string" ? new TextEncoder().encode(input) : input;
+    const rate = 136;
+    const padded = new Uint8Array(Math.floor(data.length / rate + 1) * rate);
+    padded.set(data);
+    padded[data.length] ^= 1;
+    padded[padded.length - 1] ^= 128;
+    const A = new Array(25).fill(0n);
+    for (let off = 0; off < padded.length; off += rate) {
+      for (let i = 0; i < rate / 8; i++) {
+        let lane = 0n;
+        for (let b = 7; b >= 0; b--) lane = lane << 8n | BigInt(padded[off + i * 8 + b]);
+        A[i] ^= lane;
+      }
+      keccakF(A);
+    }
+    const out = new Uint8Array(32);
+    for (let i = 0; i < 4; i++) for (let b = 0; b < 8; b++) out[i * 8 + b] = Number(A[i] >> BigInt(8 * b) & 0xffn);
+    return out;
+  }
+  var keccakHex = (input) => "0x" + Array.from(keccak256(input), (x) => x.toString(16).padStart(2, "0")).join("");
+
+  // ../../../TapeKit/kernel/src/kernel.js
+  var ZERO32 = "0x" + "0".repeat(64);
+  var STATUSES = ["ok", "unpaid", "not-opened", "no-such-cpu", "no-such-token", "not-tapeout", "blocked", "store-changed"];
+  var SiteError = class extends KernelError {
+    constructor(code, key, vars) {
+      super(code, key, vars);
+      this.name = "SiteError";
+    }
+  };
+  function statusText(status, mode) {
+    if (!STATUSES.includes(status)) return mode === "both" ? { zh: status, en: status } : status;
+    return mode === "both" ? tt("status." + status) : t("status." + status);
+  }
+  var STATUS_TEXT = new Proxy({}, { get: (_, k) => typeof k === "string" && STATUSES.includes(k) ? t("status." + k) : void 0, ownKeys: () => STATUSES, getOwnPropertyDescriptor: () => ({ enumerable: true, configurable: true }) });
+  var freeze = (r) => JSON.parse(JSON.stringify(r, (k, v) => typeof v === "bigint" ? { $big: v.toString() } : v));
+  var thaw = (r) => JSON.parse(JSON.stringify(r), (k, v) => v && typeof v === "object" && "$big" in v ? BigInt(v.$big) : v);
+  function createKernel(options = {}) {
+    if (options.network || options.rpc) return createChainKernel(options);
+    if (options.locale) setLocale(options.locale);
+    const nets = options.networks || NETWORKS;
+    const cache2 = options.cache || createMemoryCache({ maxBytes: options.cacheBytes ?? 64 * 1024 * 1024 });
+    const urlsFor = (net) => {
+      const r = options.rpcUrls;
+      if (!r) return void 0;
+      if (Array.isArray(r)) return net.chainId === HOME_NETWORK.chainId && r.length ? r : void 0;
+      const u = r[net.chainId] || r[String(net.chainId)] || r[net.key];
+      return u && u.length ? u : void 0;
+    };
+    const kernels = new Map(nets.map((net) => [net.chainId, createChainKernel({ ...options, locale: void 0, network: net, cache: cache2, rpcUrls: urlsFor(net) })]));
+    const home = kernels.get(HOME_NETWORK.chainId) || kernels.values().next().value;
+    const kernelFor = (chainId) => kernels.get(Number(chainId)) || null;
+    const mustKernel = (chainId) => {
+      const k = kernelFor(chainId);
+      if (!k) throw new SiteError("chain", "site.chain-call", { what: `chain ${chainId}` });
+      return k;
+    };
+    async function resolve(input, opts = {}) {
+      const parsed = typeof input === "string" ? parseInput(input) : input;
+      if (opts.chainId !== void 0) return mustKernel(opts.chainId).resolve(input, opts);
+      if (parsed.kind === "name") {
+        const net = networkByArea(parsed.area);
+        const k = net && kernelFor(net.chainId);
+        if (!k) throw new InputError("input.area", { value: String(parsed.area) });
+        return k.resolve(input, opts);
+      }
+      if (opts.block) throw new InputError("input.needs-chain", {});
+      const list = [...kernels.values()];
+      const isFound = (v) => !["not-tapeout", "store-changed"].includes(v.status);
+      const tasks = list.map((k) => k.resolve(input, opts).then((v) => ({ k, ok: true, v }), (e) => ({ k, ok: false, e })));
+      if (parsed.kind === "container") {
+        const first = await new Promise((done) => {
+          let left = tasks.length;
+          for (const t2 of tasks) t2.then((x) => {
+            if (x.ok && isFound(x.v)) done(x);
+            else if (--left === 0) done(null);
+          });
+        });
+        if (first) return first.v;
+      }
+      const got = await Promise.all(tasks);
+      const found = got.filter((x) => x.ok && isFound(x.v));
+      if (parsed.kind === "circuit") {
+        const factoryOf = (x) => String(x.k.config.factory).toLowerCase();
+        for (const f of found) {
+          const peers = got.filter((x) => x !== f && factoryOf(x) === factoryOf(f));
+          const clash = peers.filter((x) => x.ok && isFound(x.v));
+          if (clash.length) throw new InputError("input.ambiguous", { chains: [f, ...clash].map((x) => x.k.config.name).join(" / ") });
+          const unsure = peers.find((x) => !x.ok || x.v.status === "store-changed");
+          if (unsure) {
+            if (!unsure.ok) throw unsure.e;
+            return unsure.v;
+          }
+        }
+      }
+      if (found.length > 1) throw new InputError("input.ambiguous", { chains: found.map((x) => x.k.config.name).join(" / ") });
+      if (found.length === 1) return found[0].v;
+      const changed = got.find((x) => x.ok && x.v.status === "store-changed");
+      if (changed) return changed.v;
+      const failed = got.find((x) => !x.ok);
+      if (failed) throw failed.e;
+      const home2 = got.find((x) => x.k.config.chainId === HOME_NETWORK.chainId) || got[0];
+      return home2.v;
+    }
+    const byRes = (res) => mustKernel(res.chainId ?? HOME_NETWORK.chainId);
+    const rpc = {
+      get urls() {
+        return [...new Set([...kernels.values()].flatMap((k) => k.rpc.urls))];
+      },
+      quorum: home.rpc.quorum,
+      stats: () => Object.assign({}, ...[...kernels.values()].map((k) => k.rpc.stats())),
+      forChain: (chainId) => mustKernel(chainId).rpc
+    };
+    return {
+      config: home.config,
+      networks: nets,
+      kernelFor,
+      rpc,
+      cache: cache2,
+      parseInput,
+      resolve,
+      manifest: (res, o) => byRes(res).manifest(res, o),
+      getFile: (res, man, p) => byRes(res).getFile(res, man, p),
+      openSite: (res, o) => byRes(res).openSite(res, o),
+      loadSite: (res, o) => byRes(res).loadSite(res, o),
+      watch: (site, onChange, o) => byRes(site.res).watch(site, onChange, o),
+      checkStores: (block, o = {}) => mustKernel(o.chainId ?? HOME_NETWORK.chainId).checkStores(block),
+      domainLive: (domain, container, o = {}) => mustKernel(o.chainId ?? HOME_NETWORK.chainId).domainLive(domain, container, o),
+      cpuIndexOf: (circuits, block, o = {}) => mustKernel(o.chainId ?? HOME_NETWORK.chainId).cpuIndexOf(circuits, block),
+      cpuAt: (cpu, block, o = {}) => mustKernel(o.chainId ?? HOME_NETWORK.chainId).cpuAt(cpu, block),
+      normalizePath,
+      resolvePath,
+      setLocale,
+      getLocale,
+      statusText
+    };
+  }
+  function createChainKernel(options = {}) {
+    if (options.locale) setLocale(options.locale);
+    const net = { ...BSC_MAINNET, ...options.network || {} };
+    const rpc = options.rpc || createRpc({ ...rpcOptionsFor(net, options.rpcUrls), quorum: options.quorum, fetchImpl: options.fetchImpl });
+    const isBlocked = options.isBlocked || (() => false);
+    const cache2 = options.cache || createMemoryCache({ maxBytes: options.cacheBytes ?? 64 * 1024 * 1024 });
+    const resolveTtl = options.resolveTtlMs ?? 6e4;
+    const fileKey = (sha) => `file:v1:${sha}`;
+    const resolveMem = /* @__PURE__ */ new Map();
+    const identity = createIdentity({ rpc, network: net, cache: cache2, fail: (what) => {
+      throw new SiteError("chain", "site.chain-call", { what });
+    } });
+    const { batch, one, cpuIndexOf, cpuAt } = identity;
+    const must = (r, what) => {
+      if (r.revert) throw new SiteError("chain", "site.chain-call", { what });
+      return r;
+    };
+    const storeAddrs = () => options.skipImplCheck ? [] : Object.keys(net.expectedImpl || {});
+    function judgeStores(addrs, outcomes) {
+      const stores = addrs.map((address, i) => {
+        const oc = outcomes[i];
+        const impl = oc && oc.ok ? "0x" + oc.value.slice(-40).toLowerCase() : null;
+        const expected = net.expectedImpl[address];
+        return { address, impl, expected, ok: !!impl && expected.includes(impl) };
+      });
+      return { ok: stores.every((s) => s.ok), stores };
+    }
+    async function checkStores(block) {
+      const addrs = storeAddrs();
+      return judgeStores(addrs, await rpc.many(addrs.map((a) => ({ method: "eth_getStorageAt", params: [a, IMPL_SLOT, block] }))));
+    }
+    async function resolve(input, opts = {}) {
+      const parsed = typeof input === "string" ? parseInput(input) : input;
+      const inputKey = typeof input === "string" ? input.trim().toLowerCase() : JSON.stringify(freeze(parsed));
+      if (!opts.fresh && !opts.block) {
+        const hit = resolveMem.get(inputKey);
+        if (hit && hit.at <= Date.now() && Date.now() - hit.at < resolveTtl) {
+          const blocked = isBlocked && hit.res.container && isBlocked({ container: hit.res.container, name: hit.res.name });
+          if (!blocked) return thaw(hit.res);
+          resolveMem.delete(inputKey);
+        }
+      }
+      const res = await resolveUncached(parsed, typeof input === "string" ? input : "", opts);
+      if (!opts.block) {
+        resolveMem.set(inputKey, { at: Date.now(), res: freeze(res) });
+        if (resolveMem.size > 200) resolveMem.delete(resolveMem.keys().next().value);
+      }
+      return res;
+    }
+    async function pinFresh() {
+      const block = await rpc.pinBlock();
+      const max = net.maxPinLagBlocks;
+      const lag = typeof rpc.pinLag === "function" ? rpc.pinLag() : 0n;
+      if (max && lag > BigInt(max)) throw new RpcError("rpc.stale", { n: String(lag) });
+      return block;
+    }
+    async function resolveUncached(parsed, input, opts) {
+      const block = opts.block || await pinFresh();
+      const res = { input, path: parsed.path, block, chainId: net.chainId, network: net.key || null, area: net.area ?? null };
+      const addrs = storeAddrs();
+      const { identity: id } = await identity.resolveIdentity(parsed, block, {
+        prepend: addrs.map((a) => ({ method: "eth_getStorageAt", params: [a, IMPL_SLOT, block] })),
+        afterFirst: (outcomes) => {
+          res.stores = judgeStores(addrs, outcomes);
+          return res.stores.ok;
+        }
+      });
+      if (!res.stores.ok) return { ...res, status: "store-changed" };
+      if (id.status !== "ok" && id.status !== "no-such-token") return { ...res, ...id };
+      const { name, container, tokenId, cpu } = id;
+      const base = {
+        ...res,
+        name,
+        url: formatUrl(tokenId, cpu, parsed.path, net.nameSuffix, net.area),
+        short: formatShort(tokenId, cpu, net.area),
+        label: formatLabel(tokenId, cpu, net.area),
+        cpu,
+        cpuName: id.cpuName,
+        circuits: id.circuits,
+        tokenId,
+        container,
+        holder: id.holder,
+        opened: id.opened,
+        paid: false,
+        paidUntil: 0n,
+        paidVia: null
+      };
+      if (id.status === "no-such-token") return { ...base, status: "no-such-token" };
+      if (!base.opened) return { ...base, status: "not-opened" };
+      if (await isBlocked({ container, name })) return { ...base, status: "blocked" };
+      const [live, until, cLive, cUntil] = await batch([
+        { to: net.binding, sel: SEL.isLive, types: ["string", "address"], values: [name, container], out: ["bool"] },
+        { to: net.binding, sel: SEL.paidUntil, types: ["bytes32", "address"], values: [keccakHex(name), container], out: ["uint"] },
+        { to: net.binding, sel: SEL.isContainerLive, types: ["address"], values: [container], out: ["bool"] },
+        { to: net.binding, sel: SEL.containerPaidUntil, types: ["address"], values: [container], out: ["uint"] }
+      ], block);
+      const nameLive = !live.revert && live[0] === true;
+      const containerLive = !cLive.revert && cLive[0] === true;
+      const paid = nameLive || containerLive;
+      const paidUntil = [until, cUntil].filter((r) => !r.revert).reduce((m, r) => r[0] > m ? r[0] : m, 0n);
+      return { ...base, paid, paidUntil, paidVia: nameLive ? "name" : containerLive ? "container" : null, status: paid ? "ok" : "unpaid" };
+    }
+    async function manifest(res, opts = {}) {
+      const block = opts.block || res.block;
+      const PAGE = 200;
+      for (let ri = 0; ri < net.registries.length; ri++) {
+        const registry = net.registries[ri];
+        const [cnt, fb, page0] = await batch([
+          { to: registry, sel: SEL.pathCount, types: ["address"], values: [res.container], out: ["uint"] },
+          { to: registry, sel: SEL.fallbackPath, types: ["address"], values: [res.container], out: ["string"] },
+          { to: registry, sel: SEL.pathsRange, types: ["address", "uint256", "uint256"], values: [res.container, 0, PAGE], out: ["string[]"] }
+        ], block);
+        const count = Number(must(cnt, "pathCount")[0]);
+        if (count === 0 && ri < net.registries.length - 1) continue;
+        const n = Math.min(count, LIMITS.maxManifestPaths);
+        const paths = [...must(page0, "pathsRange")[0]].slice(0, n);
+        const more = [];
+        for (let from = PAGE; from < n; from += PAGE) more.push({ to: registry, sel: SEL.pathsRange, types: ["address", "uint256", "uint256"], values: [res.container, from, Math.min(PAGE, n - from)], out: ["string[]"] });
+        if (more.length) for (const r of await batch(more, block)) paths.push(...must(r, "pathsRange")[0]);
+        return { registry, paths, pathSet: new Set(paths), fallback: fb.revert ? "" : fb[0], truncated: count > n, block };
+      }
+      return { registry: net.registries[0], paths: [], pathSet: /* @__PURE__ */ new Set(), fallback: "", truncated: false, block };
+    }
+    async function fileInfos(res, man, paths) {
+      if (!paths.length) return [];
+      const rs = await batch(paths.map((p) => ({ to: man.registry, sel: SEL.fileInfo, types: ["address", "string"], values: [res.container, p], out: ["uint", "string", "bytes32", "uint", "uint"] })), man.block);
+      return rs.map((r) => {
+        const [size2, contentType, sha, updatedAt, chunkCount] = must(r, "fileInfo");
+        return { size: Number(size2), contentType, sha: sha.toLowerCase(), updatedAt: Number(updatedAt), chunkCount: Number(chunkCount) };
+      });
+    }
+    const fileFromCache = async (path, info) => {
+      if (info.sha === ZERO32) return null;
+      const hit = await cache2.get(fileKey(info.sha));
+      if (!hit || hit.bytes.length !== info.size) return null;
+      const actual = await sha256Hex(hit.bytes);
+      if (actual !== info.sha) {
+        await cache2.delete(fileKey(info.sha));
+        return null;
+      }
+      return { path, bytes: hit.bytes, size: info.size, contentType: safeContentType(info.contentType), declaredSha: info.sha, sha256: actual, updatedAt: info.updatedAt, verified: true, status: "ok", fromCache: true };
+    };
+    async function verify(path, info, bytes) {
+      const actual = await sha256Hex(bytes);
+      const declared = info.sha;
+      const complete = bytes.length === info.size;
+      const hashed = declared !== ZERO32;
+      const status = !complete || hashed && declared !== actual ? "incomplete" : hashed ? "ok" : "no-hash";
+      const file = { path, bytes, size: info.size, contentType: safeContentType(info.contentType), declaredSha: declared, sha256: actual, updatedAt: info.updatedAt, verified: status === "ok", status, fromCache: false };
+      if (status === "ok") await cache2.set(fileKey(declared), { contentType: info.contentType, size: info.size }, bytes);
+      return file;
+    }
+    async function readFiles(res, man, entries, onFile) {
+      const small = [], large = [];
+      for (const e of entries) (e.info.size <= LIMITS.rangeBytes ? small : large).push(e);
+      for (let i = 0; i < small.length; ) {
+        const group = [];
+        let bytes = 0;
+        while (i < small.length && (group.length === 0 || bytes + small[i].info.size <= 1024 * 1024) && group.length < 32) {
+          bytes += small[i].info.size;
+          group.push(small[i++]);
+        }
+        const rs = await batch(group.map((e) => ({ to: man.registry, sel: SEL.read, types: ["address", "string"], values: [res.container, e.path], out: ["bytes"] })), man.block);
+        for (let k = 0; k < group.length; k++) await onFile(await verify(group[k].path, group[k].info, must(rs[k], "read")[0]));
+      }
+      for (const e of large) {
+        const items = [];
+        for (let o = 0; o < e.info.size; o += LIMITS.rangeBytes) items.push({ to: man.registry, sel: SEL.readRange, types: ["address", "string", "uint256", "uint256"], values: [res.container, e.path, o, LIMITS.rangeBytes], out: ["bytes"] });
+        const parts = [];
+        for (let k = 0; k < items.length; k += 8) for (const r of await batch(items.slice(k, k + 8), man.block)) parts.push(must(r, "readRange")[0]);
+        const all = new Uint8Array(parts.reduce((s, p) => s + p.length, 0));
+        let off = 0;
+        for (const p of parts) {
+          all.set(p, off);
+          off += p.length;
+        }
+        await onFile(await verify(e.path, e.info, all));
+      }
+    }
+    async function getFile(res, man, requestedPath) {
+      const p = resolvePath(requestedPath, man.pathSet, man.fallback);
+      if (p === null) return null;
+      const [info] = await fileInfos(res, man, [p]);
+      if (info.chunkCount === 0) return null;
+      if (info.size > LIMITS.maxFileBytes) return { path: p, status: "too-large", size: info.size, verified: false };
+      const hit = await fileFromCache(p, info);
+      if (hit) return hit;
+      let out = null;
+      await readFiles(res, man, [{ path: p, info }], (f) => {
+        out = f;
+      });
+      return out;
+    }
+    async function openSite(res, opts = {}) {
+      const man = await manifest(res, opts);
+      const inflight = /* @__PURE__ */ new Map();
+      const files = /* @__PURE__ */ new Map();
+      const infos = /* @__PURE__ */ new Map();
+      async function info(p) {
+        if (infos.has(p)) return infos.get(p);
+        const [i] = await fileInfos(res, man, [p]);
+        infos.set(p, i);
+        return i;
+      }
+      async function get(requestedPath) {
+        const p = resolvePath(requestedPath, man.pathSet, man.fallback);
+        if (p === null) return null;
+        if (files.has(p)) return files.get(p);
+        if (inflight.has(p)) return inflight.get(p);
+        const job = (async () => {
+          const i = await info(p);
+          if (i.chunkCount === 0) return null;
+          if (i.size > LIMITS.maxFileBytes) return { path: p, status: "too-large", size: i.size, verified: false };
+          let f = await fileFromCache(p, i);
+          if (!f) await readFiles(res, man, [{ path: p, info: i }], (x) => {
+            f = x;
+          });
+          files.set(p, f);
+          return f;
+        })();
+        inflight.set(p, job);
+        try {
+          return await job;
+        } finally {
+          inflight.delete(p);
+        }
+      }
+      async function prefetch(paths, onProgress) {
+        const real = [...new Set(paths.map((x) => resolvePath(x, man.pathSet, man.fallback)).filter((x) => x && !files.has(x)))];
+        const is = await fileInfos(res, man, real);
+        real.forEach((p, k) => infos.set(p, is[k]));
+        const todo = [];
+        const problems = [];
+        let done = 0;
+        const total = is.reduce((s, i) => s + i.size, 0);
+        for (let k = 0; k < real.length; k++) {
+          const p = real[k], i = is[k];
+          if (i.chunkCount === 0) continue;
+          if (i.size > LIMITS.maxFileBytes) {
+            problems.push({ path: p, status: "too-large" });
+            continue;
+          }
+          const hit = await fileFromCache(p, i);
+          if (hit) {
+            files.set(p, hit);
+            done += i.size;
+          } else todo.push({ path: p, info: i });
+        }
+        onProgress?.({ done, total, files: files.size });
+        await readFiles(res, man, todo, (f) => {
+          if (f.status === "ok" || f.status === "no-hash") files.set(f.path, f);
+          if (f.status !== "ok") problems.push({ path: f.path, status: f.status });
+          done += f.size;
+          onProgress?.({ done, total, files: files.size });
+        });
+        return { loaded: files, problems };
+      }
+      return { res, manifest: man, files, get, prefetch, info };
+    }
+    async function loadSite(res, opts = {}) {
+      const maxBytes = opts.maxBytes ?? 32 * 1024 * 1024;
+      const maxFiles = opts.maxFiles ?? 2e3;
+      const site = await openSite(res, opts);
+      const man = site.manifest;
+      if (man.paths.length > maxFiles) throw new SiteError("too-many-files", "site.too-many-files", { n: man.paths.length, max: maxFiles });
+      const infos = await fileInfos(res, man, man.paths);
+      const total = infos.reduce((s, i) => s + (i.chunkCount ? i.size : 0), 0);
+      if (total > maxBytes) throw new SiteError("too-large", "site.too-large", { mb: (total / 1048576).toFixed(1), max: (maxBytes / 1048576).toFixed(0) });
+      const { problems } = await site.prefetch(man.paths, opts.onProgress && ((p) => opts.onProgress({ ...p, count: man.paths.length })));
+      return { manifest: man, files: site.files, problems, totalBytes: total, site };
+    }
+    async function domainLive(domain, container, opts = {}) {
+      const block = opts.block || await pinFresh();
+      const r = await one({ to: net.binding, sel: SEL.isLive, types: ["string", "address"], values: [String(domain).toLowerCase(), container], out: ["bool"] }, block);
+      return !r.revert && r[0] === true;
+    }
+    function watch(site, onChange, opts = {}) {
+      const intervalMs = opts.intervalMs ?? 3e4;
+      const maxPaths = opts.maxPaths ?? 200;
+      const res = site.res;
+      const man = site.manifest;
+      const known = /* @__PURE__ */ new Map();
+      let count = man.paths.length, fallback = man.fallback;
+      let stopped = false, timer = null, primed = false;
+      const watched = () => [.../* @__PURE__ */ new Set([...man.paths.slice(0, maxPaths), ...site.files.keys()])];
+      async function snapshot(block) {
+        const paths = watched();
+        const [cnt, fb, ...infos] = await batch([
+          { to: man.registry, sel: SEL.pathCount, types: ["address"], values: [res.container], out: ["uint"] },
+          { to: man.registry, sel: SEL.fallbackPath, types: ["address"], values: [res.container], out: ["string"] },
+          ...paths.map((p) => ({ to: man.registry, sel: SEL.fileInfo, types: ["address", "string"], values: [res.container, p], out: ["uint", "string", "bytes32", "uint", "uint"] }))
+        ], block);
+        const files = /* @__PURE__ */ new Map();
+        paths.forEach((p, i) => {
+          const r = infos[i];
+          if (!r.revert) files.set(p, { sha: String(r[2]).toLowerCase(), updatedAt: Number(r[3]), exists: Number(r[4]) > 0 });
+        });
+        return { count: cnt.revert ? count : Number(cnt[0]), fallback: fb.revert ? fallback : fb[0], files };
+      }
+      const tick2 = async () => {
+        if (stopped) return;
+        try {
+          const block = await pinFresh();
+          const snap = await snapshot(block);
+          if (!primed) {
+            primed = true;
+            for (const [p, v] of snap.files) known.set(p, v);
+            count = snap.count;
+            fallback = snap.fallback;
+          } else {
+            const changed = [], removed = [];
+            for (const [p, v] of snap.files) {
+              const old = known.get(p);
+              if (!old) {
+                known.set(p, v);
+                continue;
+              }
+              if (old.exists && !v.exists) removed.push(p);
+              else if (v.exists && (old.sha !== v.sha || old.updatedAt !== v.updatedAt)) changed.push(p);
+              known.set(p, v);
+            }
+            const added = snap.count > count;
+            const fbChanged = snap.fallback !== fallback;
+            count = snap.count;
+            fallback = snap.fallback;
+            if (changed.length || removed.length || added || fbChanged) {
+              for (const k of [res.input, res.name, res.container].filter(Boolean)) resolveMem.delete(String(k).trim().toLowerCase());
+              await onChange({ changed, removed, added, fallbackChanged: fbChanged, count: snap.count, block });
+            }
+          }
+        } catch (e) {
+          opts.onError?.(e);
+        }
+        if (!stopped) timer = setTimeout(tick2, intervalMs);
+      };
+      timer = setTimeout(tick2, opts.firstDelayMs ?? 0);
+      return () => {
+        stopped = true;
+        clearTimeout(timer);
+      };
+    }
+    return { config: net, rpc, cache: cache2, parseInput, resolve, manifest, getFile, openSite, loadSite, checkStores, cpuIndexOf, cpuAt, domainLive, watch, normalizePath, resolvePath, setLocale, getLocale, statusText };
+  }
+
+  // ../../../TapeKit/kernel/src/purity.js
+  var ATTR = /\b(?:src|href|action|poster|data|formaction|background)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/gi;
+  var SRCSET = /\bsrcset\s*=\s*(?:"([^"]*)"|'([^']*)')/gi;
+  var CSS_URL = /url\(\s*(?:"([^"]*)"|'([^']*)'|([^)\s]*))\s*\)/gi;
+  var CSS_IMPORT = /@import\s+(?:"([^"]*)"|'([^']*)')/gi;
+  var META_REFRESH = /<meta[^>]+http-equiv\s*=\s*["']?refresh[^>]*content\s*=\s*["'][^"']*url=([^"'>\s]+)/gi;
+  function isExternal(url) {
+    const u = String(url || "").trim();
+    return /^(?:https?|wss?|ftp):/i.test(u) || u.startsWith("//");
+  }
+  function collect(re, text, out, where) {
+    re.lastIndex = 0;
+    let m;
+    while (m = re.exec(text)) {
+      const v = (m[1] ?? m[2] ?? m[3] ?? "").trim();
+      if (!v) continue;
+      const candidates = re === SRCSET ? v.split(",").map((s) => s.trim().split(/\s+/)[0]) : [v];
+      for (const c of candidates) if (isExternal(c)) out.push({ url: c, where });
+    }
+  }
+  function scanHtml(text) {
+    const out = [];
+    collect(ATTR, text, out, "html");
+    collect(SRCSET, text, out, "html");
+    collect(CSS_URL, text, out, "inline-css");
+    collect(CSS_IMPORT, text, out, "inline-css");
+    collect(META_REFRESH, text, out, "meta-refresh");
+    return out;
+  }
+  function scanCss(text) {
+    const out = [];
+    collect(CSS_URL, text, out, "css");
+    collect(CSS_IMPORT, text, out, "css");
+    return out;
+  }
+
+  // ../../../TapeKit/sw-gateway/pages.js
+  var T = {
+    gw: { zh: "tape:// 网关", en: "tape:// gateway" },
+    status: { zh: "状态", en: "Status" },
+    name: { zh: "链上名字", en: "On-chain name" },
+    url: { zh: "网址", en: "URL" },
+    processor: { zh: "处理器", en: "Processor" },
+    holder: { zh: "持有人", en: "Holder" },
+    container: { zh: "容器", en: "Container" },
+    block: { zh: "读取区块", en: "Block read" },
+    live: { zh: "开通状态", en: "Activation" },
+    until: { zh: "至", en: "until" },
+    viaContainer: { zh: "容器已付费", en: "container paid" },
+    viaName: { zh: "名字已付费", en: "name paid" },
+    files: { zh: "本次会话读到的文件", en: "Files read this session" },
+    verified: { zh: "已与链上核对", en: "verified against chain" },
+    noHash: { zh: "未声明哈希（未校验）", en: "no declared hash (unverified)" },
+    bad: { zh: "与链上不一致", en: "mismatch with chain" },
+    external: { zh: "链外资源", en: "Off-chain references" },
+    externalNone: { zh: "静态扫描没有发现链外资源", en: "Static scan found no off-chain references" },
+    offchain: { zh: "运行时访问的链外地址", en: "Off-chain addresses accessed at runtime" },
+    offchainNone: { zh: "没有", en: "none" },
+    offchainHint: { zh: "链上网站可以访问链外的数据（接口、图片、视频流、钱包连接）；这里列出访问过的地址（不含查询参数）。", en: "On-chain sites may reach off-chain data (APIs, images, video streams, wallet connections); addresses reached are listed here, without query strings." },
+    blocked: { zh: "被拦下的链外代码", en: "Off-chain code blocked" },
+    blockedNone: { zh: "没有", en: "none" },
+    blockedHint: { zh: "网站的代码只能来自链上，从链外加载的脚本会被拦下。", en: "Site code must come from the chain; scripts loaded from off-chain are blocked." },
+    pure: { zh: "本次未发现链外访问", en: "No off-chain access seen" },
+    notPure: { zh: "引用了链外资源", en: "references off-chain resources" },
+    nodes: { zh: "节点", en: "Nodes" },
+    nodeOk: { zh: "成功", en: "ok" },
+    nodeFail: { zh: "失败", en: "failed" },
+    nodeRl: { zh: "限流", en: "rate-limited" },
+    nodeMs: { zh: "最近耗时", en: "last latency" },
+    nodeCool: { zh: "冷却中", en: "cooling down" },
+    quorum: { zh: "每次读取至少 {q} 家运营方给出相同结果才采用", en: "Every read needs at least {q} independent operators to agree" },
+    settings: { zh: "设置（只存在你的浏览器里）", en: "Settings (stored only in your browser)" },
+    devPreview: { zh: "开发预览：显示还没开通的名字（站长自测用）", en: "Dev preview: show names that are not activated yet (for site owners)" },
+    lang: { zh: "Language: English", en: "语言：中文" },
+    save: { zh: "保存", en: "Save" },
+    clearCache: { zh: "清空本机的链上文件缓存", en: "Clear local on-chain file cache" },
+    blockSite: { zh: "在本机屏蔽这个网站", en: "Block this site on this device" },
+    unblockSite: { zh: "取消屏蔽", en: "Unblock" },
+    report: { zh: "举报这个网站", en: "Report this site" },
+    back: { zh: "返回网站", en: "Back to site" },
+    unpaidTitle: { zh: "这个链上名字还没开通", en: "This on-chain name is not activated" },
+    unpaid1: { zh: "没有查到 {name} 的有效付费（这个名字或这个容器都没有），所以网关不显示它。", en: "No valid payment was found for {name} (neither the name nor its container), so the gateway does not display it." },
+    unpaid2: { zh: '开通方法：电路持有人在 {network} 上调用付费合约 DomainBinding.bind("{name}", 容器, 月数)，按 30 天付费（费用以合约为准），最多预付 10 年。容器已经为域名付过费的自动算作开通。', en: 'To activate: the circuit holder calls DomainBinding.bind("{name}", container, months) on {network}, paying per 30 days (the contract sets the fee), up to 10 years prepaid. A container that already paid for a domain counts as activated.' },
+    cannotShow: { zh: "无法显示", en: "Cannot display" },
+    notFound: { zh: "404 · 链上没有这个文件", en: "404 · No such file on chain" },
+    tooLarge: { zh: "文件超过上限，网关不读取", en: "File exceeds the size limit; the gateway does not read it" },
+    notVerified: { zh: "文件与链上记录不符（上传中或已损坏），不显示", en: "File does not match its on-chain record (uploading or corrupted); not displayed" },
+    badHost: { zh: "主机名写法不对", en: "Invalid host name" },
+    badHost1: { zh: "网站子域名要写成「#ID-处理器编号」，例如 4246-0.{host}", en: 'The site subdomain must be "#ID-processor", e.g. 4246-0.{host}' },
+    rpcFail: { zh: "节点不足，读不到链", en: "Not enough nodes; cannot read the chain" },
+    rpcFail1: { zh: "需要至少 {q} 家运营方给出相同结果。刚才的错误：{err}", en: "At least {q} independent operators must agree. Last error: {err}" },
+    blockedReq: { zh: "这个请求指向链外，已被 tape 网关拦截。网关上的链上网站不能访问链外资源。", en: "This request goes off-chain and was blocked by the tape gateway. On-chain sites on the gateway cannot reach off-chain resources." },
+    devBanner: { zh: "开发预览：这个名字还没开通，只有打开了开发预览的浏览器能看到", en: "Dev preview: this name is not activated; only browsers with dev preview enabled can see it" },
+    serverRead: { zh: "这些文件是网关在服务器上读的", en: "These files were read by the gateway, on its server" },
+    serverRead1: { zh: "你的浏览器装不上 Service Worker（App 内置浏览器、隐私模式常常不支持），所以这个地址由网关在服务器上从链上读出文件、核对哈希，再发给你。核对发生在网关，不在你的浏览器里：你需要信任这个网关。", en: "Your browser cannot install a Service Worker (in-app browsers and private modes often cannot), so on this address the gateway reads the files from the chain on its server, checks their hashes, and sends them to you. The check happens on the gateway, not in your browser: you have to trust this gateway." },
+    serverRead2: { zh: "想让浏览器自己读链、自己核对，用最近两年的 Chrome、Edge、Firefox 或 Safari 打开 {verifyHost}。", en: "To have your own browser read the chain and check the hashes itself, open {verifyHost} in a recent Chrome, Edge, Firefox or Safari." },
+    statusLink: { zh: "这个网站的状态页：", en: "Status page for this site:" },
+    notice: { zh: "链上数据是公开的；网关只显示已开通的名字。「已与链上核对」只说明字节与链上一致，不说明网站可信。WebSocket 和跨来源框架不经过网关，看不到也记不到，所以「本次未发现链外访问」不等于「一定没有」。", en: 'On-chain data is public; the gateway only displays activated names. "Verified" means the bytes match the chain, not that the site is trustworthy. WebSocket connections and cross-origin frames do not pass through the gateway, so "no off-chain access seen" does not mean there was none.' }
+  };
+  var pickLocale = (acceptLanguage, override) => {
+    if (override) return String(override).toLowerCase().startsWith("zh") ? "zh" : "en";
+    return /^\s*zh|,\s*zh/i.test(String(acceptLanguage || "")) ? "zh" : "en";
+  };
+  var NETWORK_NAMES = { 56: "BNB Chain", 196: "X Layer", 8453: "Base" };
+  var networkName = (res) => NETWORK_NAMES[res && res.chainId] || "BNB Chain";
+  var fill2 = (s, v) => String(s).replace(/\{(\w+)\}/g, (m, k) => v && k in v ? String(v[k]) : m);
+  var tr = (locale) => (k, v) => fill2((T[k] || {})[locale] ?? (T[k] || {}).en ?? k, v);
+  var esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+  var fmtBytes = (n) => n < 1024 ? `${n} B` : n < 1048576 ? `${(n / 1024).toFixed(1)} KB` : `${(n / 1048576).toFixed(2)} MB`;
+  var fmtDate = (sec, locale) => sec ? new Date(Number(sec) * 1e3).toLocaleDateString(locale === "zh" ? "zh-CN" : "en-GB", { year: "numeric", month: "2-digit", day: "2-digit" }) : "";
+  var CSS = `
+:root{color-scheme:light dark}body{margin:0;font:15px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"PingFang SC","Noto Sans CJK SC",sans-serif;background:#f6f7f9;color:#1b1f24}
+@media(prefers-color-scheme:dark){body{background:#0f1115;color:#e6e8eb}.card{background:#171a20!important;border-color:#2a2f38!important}input,textarea{background:#0f1115;color:#e6e8eb;border-color:#2a2f38}}
+main{max-width:860px;margin:0 auto;padding:28px 20px 60px}h1{font-size:22px;margin:0 0 6px}h2{font-size:15px;margin:26px 0 8px;opacity:.8;text-transform:uppercase;letter-spacing:.04em}
+.card{background:#fff;border:1px solid #e3e6ea;border-radius:10px;padding:16px 18px;margin:12px 0}.kv{display:grid;grid-template-columns:max-content 1fr;gap:6px 16px;align-items:baseline}.kv b{font-weight:600;opacity:.75}
+code,.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:13px;word-break:break-all}.chip{display:inline-block;padding:2px 9px;border-radius:999px;font-size:12px;margin-right:6px;background:#e9ecef;color:#333}
+.ok{background:#d9f2e3;color:#116b3a}.bad{background:#fbe1e1;color:#8b1c1c}.warn{background:#fff1cf;color:#7a5200}.hint{opacity:.7;font-size:13px}
+table{border-collapse:collapse;width:100%;font-size:13px}td,th{text-align:left;padding:5px 8px;border-bottom:1px solid #e3e6ea}th{opacity:.7;font-weight:600}
+form{margin:0}label{display:block;margin:8px 0}textarea,input[type=text]{width:100%;box-sizing:border-box;padding:8px;border:1px solid #cfd4da;border-radius:6px;font:inherit}
+button{font:inherit;padding:7px 14px;border-radius:7px;border:1px solid #cfd4da;background:#fff;cursor:pointer;margin:4px 6px 0 0}button.primary{background:#1b1f24;color:#fff;border-color:#1b1f24}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center}ul{padding-left:20px;margin:6px 0}a{color:inherit}
+`;
+  var shell = (locale, title, body) => `<!doctype html><html lang="${locale === "zh" ? "zh" : "en"}"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; form-action 'self'"><title>${esc(title)}</title><style>${CSS}</style></head><body><main>${body}</main></body></html>`;
+  var identityCard = (t2, locale, res, extra = "") => {
+    if (!res || !res.name) return "";
+    const cpu = `${res.cpu}${res.cpuName ? " · " + esc(res.cpuName) : ""}`;
+    const live = res.status === "ok" ? `<span class="chip ok">${esc(res.statusText || res.status)}</span>` : `<span class="chip bad">${esc(res.statusText || res.status)}</span>`;
+    return `<div class="card"><div class="kv">
+<b>${t2("name")}</b><span class="mono">${esc(res.name)}</span>
+<b>${t2("url")}</b><span class="mono">${esc(res.url || "")}</span>
+<b>${t2("processor")}</b><span>#${cpu}</span>
+<b>${t2("holder")}</b><span class="mono">${esc(res.holder || "")}</span>
+<b>${t2("container")}</b><span class="mono">${esc(res.container || "")}</span>
+<b>${t2("block")}</b><span class="mono">${res.block ? parseInt(res.block, 16) : ""}</span>
+<b>${t2("live")}</b><span>${res.paid ? `<span class="chip ok">${esc(res.paidVia === "container" ? t2("viaContainer") : t2("viaName"))}</span> ${t2("until")} ${fmtDate(res.paidUntil, locale)}` : `<span class="chip bad">${esc(res.statusText || res.status)}</span>`}</span>
+</div>${extra}</div>`;
+  };
+  function statusPage({ locale, res, host, files, external, blocked, offchain = [], nodes, quorum, settings, blockedByUser, reportUrl, statusTextOf: statusTextOf2 }) {
+    const t2 = tr(locale);
+    const st = res ? { ...res, statusText: statusTextOf2 ? statusTextOf2(res.status) : res.status } : null;
+    const nOk = files.filter((f) => f.status === "ok").length, nNo = files.filter((f) => f.status === "no-hash").length, nBad = files.filter((f) => f.status !== "ok" && f.status !== "no-hash").length;
+    const pure = external.length === 0 && blocked.length === 0 && offchain.length === 0;
+    const fileRows = files.slice(0, 200).map((f) => `<tr><td class="mono">${esc(f.path)}</td><td>${fmtBytes(f.size || 0)}</td><td>${f.status === "ok" ? `<span class="chip ok">${t2("verified")}</span>` : f.status === "no-hash" ? `<span class="chip warn">${t2("noHash")}</span>` : `<span class="chip bad">${esc(f.status)}</span>`}</td></tr>`).join("");
+    const nodeRows = Object.entries(nodes).map(([u, s]) => `<tr><td class="mono">${esc(u)}</td><td>${s.ok}</td><td>${s.fail}</td><td>${s.rateLimited}${s.cooldownUntil > Date.now() ? ` <span class="chip warn">${t2("nodeCool")}</span>` : ""}</td><td>${s.lastMs == null ? "" : s.lastMs + " ms"}</td><td class="hint">${esc(s.lastError || "")}</td></tr>`).join("");
+    const list = (items, none) => items.length ? `<ul>${items.slice(0, 100).map((x) => `<li class="mono">${esc(typeof x === "string" ? x : x.url)}${x.path ? ` <span class="hint">← ${esc(x.path)}</span>` : ""}${x.where ? ` <span class="hint">(${esc(x.where)})</span>` : ""}</li>`).join("")}</ul>` : `<p class="hint">${none}</p>`;
+    const body = `
+<h1>${t2("gw")} · ${t2("status")}</h1>
+<p class="hint">${esc(host)}</p>
+${st ? identityCard(t2, locale, st, st.status === "ok" ? `<p style="margin:10px 0 0"><a href="/">${t2("back")}</a></p>` : "") : ""}
+${st && st.status === "ok" ? `
+<h2>${t2("files")}</h2>
+<div class="card"><p class="row"><span class="chip ${nBad ? "bad" : "ok"}">${nOk} ${t2("verified")}</span>${nNo ? `<span class="chip warn">${nNo} ${t2("noHash")}</span>` : ""}${nBad ? `<span class="chip bad">${nBad} ${t2("bad")}</span>` : ""}<span class="chip ${pure ? "ok" : "warn"}">${pure ? t2("pure") : t2("notPure")}</span></p>
+${files.length ? `<table><tr><th>path</th><th>size</th><th></th></tr>${fileRows}</table>` : ""}</div>
+<h2>${t2("external")}</h2><div class="card">${list(external, t2("externalNone"))}</div>
+<h2>${t2("offchain")}</h2><div class="card"><p class="hint">${t2("offchainHint")}</p>${list(offchain, t2("offchainNone"))}</div>
+<h2>${t2("blocked")}</h2><div class="card"><p class="hint">${t2("blockedHint")}</p>${list(blocked, t2("blockedNone"))}</div>` : ""}
+<h2>${t2("nodes")}</h2>
+<div class="card"><p class="hint">${t2("quorum", { q: quorum })}</p><table><tr><th>URL</th><th>${t2("nodeOk")}</th><th>${t2("nodeFail")}</th><th>${t2("nodeRl")}</th><th>${t2("nodeMs")}</th><th></th></tr>${nodeRows}</table></div>
+<h2>${t2("settings")}</h2>
+<div class="card"><form method="post" action="/.tape/settings">
+<label><input type="checkbox" name="devPreview" value="1" ${settings.devPreview ? "checked" : ""}> ${t2("devPreview")}</label>
+<input type="hidden" name="back" value="/.tape/status">
+<div class="row"><button class="primary" type="submit">${t2("save")}</button>
+<button type="submit" name="action" value="lang">${t2("lang")}</button>
+<button type="submit" name="action" value="clearCache">${t2("clearCache")}</button>
+<button type="submit" name="action" value="${blockedByUser ? "unblock" : "block"}">${blockedByUser ? t2("unblockSite") : t2("blockSite")}</button>
+${reportUrl ? `<a href="${esc(reportUrl)}" target="_blank" rel="noopener noreferrer">${t2("report")}</a>` : ""}</div>
+</form></div>
+<p class="hint">${t2("notice")}</p>`;
+    return shell(locale, `${t2("status")} · ${res && res.name ? res.name : host}`, body);
+  }
+  function messagePage({ locale, kind, res, host, vars = {}, statusTextOf: statusTextOf2 }) {
+    const t2 = tr(locale);
+    const st = res ? { ...res, statusText: statusTextOf2 ? statusTextOf2(res.status) : res.status } : null;
+    let title, html = "";
+    switch (kind) {
+      case "unpaid":
+        title = t2("unpaidTitle");
+        html = `<p>${t2("unpaid1", { name: esc(res.name) })}</p><p class="hint">${t2("unpaid2", { name: esc(res.name), network: esc(networkName(res)) })}</p>`;
+        break;
+      case "status":
+        title = t2("cannotShow");
+        html = `<p>${esc(st.statusText)}</p>`;
+        break;
+      case "not-found":
+        title = t2("notFound");
+        html = `<p><a href="/">${t2("back")}</a></p>`;
+        break;
+      // 路径任何人都能构造，不回显，免得在知名网站名下显示攻击者的文字
+      case "too-large":
+        title = t2("tooLarge");
+        html = `<p class="mono">${esc(vars.path || "")}</p>`;
+        break;
+      case "not-verified":
+        title = t2("notVerified");
+        html = `<p class="mono">${esc(vars.path || "")}</p>`;
+        break;
+      case "server-read":
+        title = t2("serverRead");
+        html = `<p>${t2("serverRead1")}</p><p class="hint">${t2("serverRead2", { verifyHost: `<span class="mono">${esc(vars.verifyHost || "")}</span>` })}</p>`;
+        break;
+      case "bad-host":
+        title = t2("badHost");
+        html = `<p>${t2("badHost1", { host: esc(vars.root || host) })}</p>`;
+        break;
+      case "rpc":
+        title = t2("rpcFail");
+        html = `<p>${t2("rpcFail1", { q: vars.quorum, err: esc(vars.err || "") })}</p>`;
+        break;
+      case "blocked-request":
+        title = t2("blockedReq");
+        break;
+      default:
+        title = kind;
+    }
+    const body = `<h1>${esc(title)}</h1>${html}${st ? identityCard(t2, locale, st) : ""}<p class="hint">${t2("statusLink")} <a href="/.tape/status">/.tape/status</a> · <a href="/.tape/policy.html">${t2("report")}</a></p>`;
+    return shell(locale, title, body);
+  }
+
+  // ../../../TapeKit/sw-gateway/serve.js
+  var GATEWAY_PATHS = /^\/(sw\.js$|\.tape\/(kernel\/|boot\.js$|pages\.js$|serve\.js$|policy\.html$|blocklist\.txt$|config\.json$))/;
+  var SITE_CSP = [
+    "default-src 'self' blob: data:",
+    "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:",
+    "style-src 'self' 'unsafe-inline' blob: data: https:",
+    "img-src 'self' blob: data: https:",
+    "font-src 'self' blob: data: https:",
+    "media-src 'self' blob: data: https:",
+    "connect-src 'self' blob: data: https: wss:",
+    "frame-src 'self' https:",
+    "worker-src 'self' blob:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self' https:",
+    // 只允许同源把自己嵌进框架：否则任何网页都能把链上网站整页框住做点击劫持（连钱包的站尤其要紧）
+    "frame-ancestors 'self'",
+    "report-uri /.tape/csp-report"
+  ].join("; ");
+  var DOC_CSP = "default-src 'none'; style-src 'unsafe-inline'; img-src data:; form-action 'self'; frame-src 'none'; base-uri 'none'; frame-ancestors 'none'";
+  var LOCKED_CSP = "default-src 'none'; sandbox";
+  var withCharset = (ct) => /^(text\/|application\/(javascript|json|xml))/i.test(ct) && !/charset=/i.test(ct) ? ct + "; charset=utf-8" : ct;
+  var isHtml = (f) => /html/i.test(f.contentType) || /\.html?$/i.test(f.path);
+  var isCss = (f) => /css/i.test(f.contentType) || /\.css$/i.test(f.path);
+  var docPage = (body, status = 200, headers = {}) => new Response(body, { status, headers: { "content-type": "text/html; charset=utf-8", "cache-control": "no-store", "x-content-type-options": "nosniff", "content-security-policy": DOC_CSP, ...headers } });
+  var fileResponse = (file, idHeaders, mode) => new Response(file.bytes, { status: 200, headers: {
+    "content-type": withCharset(file.contentType),
+    "content-length": String(file.bytes.length),
+    "cache-control": "no-cache",
+    "x-content-type-options": "nosniff",
+    "referrer-policy": "no-referrer",
+    "x-tape-sha256": file.sha256,
+    "x-tape-verified": file.verified ? "1" : "0",
+    "x-tape-mode": mode,
+    ...idHeaders,
+    "content-security-policy": SITE_CSP
+  } });
+
+  // ../../../TapeKit/sw-gateway/config.json
+  var config_default = {
+    _comment: "网关架设者的配置。rpcUrls 为空用内核默认的公共节点；可写数组（只换 BNB）或按链名分别写（xlayer / bnb / base，写了就整条链换成这份名单，所以要连同默认节点一起写）。要加自己的节点请写限流代理地址，不要把带密钥的地址写进这个公开文件。reportUrl 里的 {name} 会换成链上名字。",
+    rpcUrls: {
+      xlayer: [
+        "https://rpc.xlayer.tech",
+        "https://xlayerrpc.okx.com",
+        "https://xlayer.drpc.org",
+        "https://196.rpc.thirdweb.com",
+        "https://tapetape.org/rpc/196"
+      ]
+    },
+    blocklistUrl: "/.tape/blocklist.txt",
+    reportUrl: "/.tape/policy.html"
+  };
+
+  // ../../../TapeKit/sw-gateway/blocklist.txt
+  var blocklist_default = "# 屏蔽名单（SPEC.md §9）：一行一个容器地址或规范链上名字，# 开头为注释。\n# 例：\n# 0x0000000000000000000000000000000000000000\n# 123.45.tape\n";
+
+  // ../../../TapeKit/sw-gateway/policy.html
+  var policy_default = `<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; style-src 'unsafe-inline'; form-action 'none'; base-uri 'none'">
+<title>Tapekit 网关 · 屏蔽规则与举报 / Blocking policy &amp; reporting</title>
+<style>
+:root{color-scheme:light}html{background:#fff}body{margin:0;background:#fff;color:#0f1419;font:19px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:760px;margin:0 auto;padding:72px 28px 120px}h1{font-size:34px;line-height:1.2;font-weight:800;letter-spacing:-.02em;margin:0 0 16px}h2{font-size:22px;margin:40px 0 10px}p,li{margin:0 0 14px}ol,ul{padding-left:24px}.hint{color:#536471;font-size:16px}.mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.95em}hr{border:0;border-top:1px solid #eff3f4;margin:56px 0}a{color:#1d9bf0}
+</style>
+</head>
+<body><main>
+<h1>屏蔽规则与举报</h1>
+<p>这个网关只做一件事：把存在链上（BNB Chain、X Layer、Base）的网站读出来交给你的浏览器。内容不在这台服务器上，我们删不掉链上的任何东西；但网关是展示方，可以拒绝显示。</p>
+<h2>会被屏蔽的内容</h2>
+<ul>
+<li>儿童性剥削材料；</li>
+<li>恶意软件、钓鱼、伪装成他人（含伪装成钱包或交易所）的页面；</li>
+<li>收到有效通知的侵权内容；</li>
+<li>网关所在司法辖区法律明确禁止的其它内容。</li>
+</ul>
+<h2>怎么举报</h2>
+<p>发邮件到 <span class="mono">codongorg@gmail.com</span>，标题写 <span class="mono">[tapekit abuse]</span>，正文写：网站的链上名字（例如 <span class="mono">4246.0.tape</span>）或子域名、问题是什么、你是谁（版权投诉需要权利证明）。</p>
+<h2>处理时限与方式</h2>
+<ol>
+<li>收到后 24 小时内回复确认；</li>
+<li>核实属实的，48 小时内加入屏蔽名单。名单是公开的静态文件 <a href="/.tape/blocklist.txt">/.tape/blocklist.txt</a>，屏蔽按链上名字或容器地址，全网 10 分钟内生效；</li>
+<li>被屏蔽的网站打开时显示「此客户端已屏蔽这个网站」，不显示任何内容；</li>
+<li>站长认为屏蔽有误，用同一个邮箱申诉，标题写 <span class="mono">[tapekit appeal]</span>。</li>
+</ol>
+<p class="hint">屏蔽只对这个网关有效。链上数据不会被改动，其它网关和客户端不受影响；网关代码开源，任何人都可以架自己的网关并制定自己的规则。</p>
+<hr>
+<h1>Blocking policy &amp; reporting</h1>
+<p>This gateway does one thing: it reads websites stored on chain (BNB Chain, X Layer, Base) and hands them to your browser. The content is not on this server and we cannot delete anything on chain; but the gateway is the party doing the displaying, and it can refuse to display.</p>
+<h2>What gets blocked</h2>
+<ul>
+<li>Child sexual abuse material;</li>
+<li>Malware, phishing, and pages impersonating others (including wallets and exchanges);</li>
+<li>Infringing content after a valid notice;</li>
+<li>Other content clearly prohibited by the law of the jurisdiction the gateway operates in.</li>
+</ul>
+<h2>How to report</h2>
+<p>Email <span class="mono">codongorg@gmail.com</span> with the subject <span class="mono">[tapekit abuse]</span>. Include the site's on-chain name (for example <span class="mono">4246.0.tape</span>) or subdomain, what the problem is, and who you are (copyright complaints need proof of rights).</p>
+<h2>Timeline and method</h2>
+<ol>
+<li>Acknowledgement within 24 hours;</li>
+<li>Confirmed reports are added to the blocklist within 48 hours. The list is a public static file, <a href="/.tape/blocklist.txt">/.tape/blocklist.txt</a>, keyed by on-chain name or container address, effective everywhere within 10 minutes;</li>
+<li>A blocked site shows "this client has blocked this site" and no content;</li>
+<li>Site owners who believe a block is wrong can appeal at the same address with the subject <span class="mono">[tapekit appeal]</span>.</li>
+</ol>
+<p class="hint">Blocking affects this gateway only. On-chain data is untouched and other gateways and clients are unaffected; the gateway is open source, and anyone can run their own with their own rules.</p>
+</main></body>
+</html>
+`;
+
+  // browser/resilient-cache.js
+  function resilientCache(openIdb, makeMemory) {
+    let inner = null, opening = null, memory = null;
+    const useMemory = () => inner = memory ||= makeMemory();
+    const open = () => opening ||= openIdb().then((c) => inner = c, useMemory).finally(() => {
+      opening = null;
+    });
+    async function call(op, args, fallback) {
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const c = inner || await open();
+        try {
+          return await c[op](...args);
+        } catch {
+          if (c === memory) break;
+          if (inner === c) inner = null;
+        }
+      }
+      return fallback;
+    }
+    return {
+      kind: "resilient",
+      get: (key) => call("get", [key], void 0),
+      set: (key, meta, bytes) => call("set", [key, meta, bytes]),
+      delete: (key) => call("delete", [key]),
+      clear: () => call("clear", [])
+    };
+  }
+
+  // browser/host.js
+  var MAX_LOG = 200;
+  var HANDLE_MAX_AGE = 2 * 6e4;
+  var REFRESH_MIN_GAP = 1e4;
+  var parseList = (text) => new Set(String(text).split("\n").map((l) => l.trim().toLowerCase()).filter((l) => l && !l.startsWith("#")));
+  var blocklist = parseList(blocklist_default);
+  var blocklistText = String(blocklist_default);
+  function setBlocklist(text) {
+    if (typeof text !== "string" || !text.trim()) return { ok: false };
+    blocklist = /* @__PURE__ */ new Set([...parseList(blocklist_default), ...parseList(text)]);
+    blocklistText = text;
+    sites.clear();
+    return { ok: true, size: blocklist.size };
+  }
+  var kernel = null;
+  var cache = null;
+  async function boot() {
+    if (kernel) return kernel;
+    cache = resilientCache(() => createIdbCache("tapetape-browser"), () => createMemoryCache());
+    kernel = createKernel({
+      cache,
+      rpcUrls: config_default.rpcUrls,
+      isBlocked: ({ container, name }) => blocklist.has(String(container).toLowerCase()) || blocklist.has(name)
+    });
+    return kernel;
+  }
+  var sites = /* @__PURE__ */ new Map();
+  var lastFresh = /* @__PURE__ */ new Map();
+  async function siteFor(name) {
+    const old = sites.get(name);
+    if (old && !old.stale && Date.now() - old.at < HANDLE_MAX_AGE) return old;
+    if (old && old.loading) return old.loading;
+    const h = old || { name, files: [], external: [], at: 0 };
+    h.loading = (async () => {
+      try {
+        const res = await kernel.resolve(name, { fresh: !!old });
+        const showable = res.status === "ok";
+        if (!h.site || !h.res || h.stale || h.res.block !== res.block || h.res.status !== res.status) {
+          h.site = showable ? await kernel.openSite(res) : null;
+          h.res = res;
+        }
+        h.at = Date.now();
+        h.showable = showable;
+        h.stale = false;
+        sites.set(name, h);
+        return h;
+      } finally {
+        h.loading = null;
+      }
+    })();
+    return h.loading;
+  }
+  function refresh(host) {
+    const name = nameOfHost(String(host || ""));
+    if (!name) return { ok: false };
+    const at = lastFresh.get(name) || 0;
+    if (Date.now() - at < REFRESH_MIN_GAP) return { ok: true, throttled: true };
+    lastFresh.set(name, Date.now());
+    const h = sites.get(name);
+    if (h) h.stale = true;
+    return { ok: true };
+  }
+  var push = (arr, item, key) => {
+    if (arr.length < MAX_LOG && !arr.some((x) => x[key] === item[key])) arr.push(item);
+  };
+  var nodeSummary = (rpc) => Object.fromEntries(Object.entries(rpc.stats()).map(([u, s]) => [new URL(u).host, { ok: s.ok, fail: s.fail, rateLimited: s.rateLimited, lastMs: s.lastMs, cooldownUntil: s.cooldownUntil }]));
+  var chainRpc = (res) => res && res.chainId && kernel.kernelFor(res.chainId)?.rpc || kernel.rpc;
+  var statusTextOf = (locale) => (s) => statusText(s, "both")[locale] ?? s;
+  var errorText = (err, locale) => err?.messages?.[locale] ?? err?.message ?? String(err);
+  function nameOfHost(host) {
+    try {
+      const p = parseInput(host);
+      return p.kind === "name" ? formatName(p.tokenId, p.cpu, "tape", p.area) : null;
+    } catch {
+      return null;
+    }
+  }
+  var locked = (body, status, type = "text/plain; charset=utf-8") => new Response(body, { status, headers: { "content-type": type, "cache-control": "no-store", "x-content-type-options": "nosniff", "content-security-policy": LOCKED_CSP } });
+  function reserved(path, locale, host) {
+    if (path === "/.tape/policy.html") return docPage(policy_default);
+    if (path === "/.tape/blocklist.txt") return locked(blocklistText, 200);
+    if (path === "/.tape/csp-report") return new Response(null, { status: 204 });
+    if (path === "/.tape/settings") return docPage(messagePage({ locale, kind: "not-found", host }), 404);
+    if (GATEWAY_PATHS.test(path)) return locked("", 404);
+    return null;
+  }
+  async function respond(rawUrl, lang) {
+    await boot();
+    const url = new URL(rawUrl);
+    const locale = pickLocale(lang);
+    const host = url.hostname;
+    const own = reserved(url.pathname, locale, host);
+    if (own) return own;
+    const name = nameOfHost(host);
+    if (!name) return docPage(messagePage({ locale, kind: "bad-host", host, vars: { root: host } }), 400);
+    let h;
+    try {
+      h = await siteFor(name);
+    } catch (err) {
+      if (err instanceof InputError) return docPage(messagePage({ locale, kind: "bad-host", host, vars: { root: host } }), 400);
+      return docPage(messagePage({ locale, kind: "rpc", host, vars: { quorum: kernel.rpc.quorum, err: errorText(err, locale) } }), 502, { "retry-after": "5" });
+    }
+    const res = h.res;
+    if (url.pathname === "/.tape/status") {
+      return docPage(statusPage({ locale, res, host, files: h.files, external: h.external, blocked: [], offchain: [], nodes: nodeSummary(chainRpc(res)), quorum: chainRpc(res).quorum, settings: { devPreview: false }, blockedByUser: false, reportUrl: "/.tape/policy.html", statusTextOf: statusTextOf(locale) }).replace(/<form[\s\S]*?<\/form>/g, ""));
+    }
+    if (!h.showable) {
+      const code = res.status === "blocked" ? 451 : res.status === "unpaid" ? 402 : res.status === "store-changed" ? 503 : 404;
+      return docPage(messagePage({ locale, kind: res.status === "unpaid" ? "unpaid" : "status", res, host, statusTextOf: statusTextOf(locale) }), code, { "x-tape-name": res.name || "", "x-tape-status": res.status });
+    }
+    const file = await h.site.get(url.pathname);
+    const idHeaders = { "x-tape-name": res.name, "x-tape-status": res.status, "x-tape-container": res.container, "x-tape-block": res.block };
+    if (!file) return docPage(messagePage({ locale, kind: "not-found", res, host, vars: { path: url.pathname }, statusTextOf: statusTextOf(locale) }), 404, idHeaders);
+    if (file.status === "too-large") return docPage(messagePage({ locale, kind: "too-large", res, host, vars: { path: file.path }, statusTextOf: statusTextOf(locale) }), 413, idHeaders);
+    if (file.status !== "ok" && file.status !== "no-hash") return docPage(messagePage({ locale, kind: "not-verified", res, host, vars: { path: file.path }, statusTextOf: statusTextOf(locale) }), 502, idHeaders);
+    push(h.files, { path: file.path, size: file.size, status: file.status, sha: file.sha256 }, "path");
+    if (isHtml(file) || isCss(file)) {
+      const text = new TextDecoder("utf-8", { fatal: false }).decode(file.bytes);
+      for (const x of isHtml(file) ? scanHtml(text) : scanCss(text)) push(h.external, { ...x, path: file.path }, "url");
+    }
+    return fileResponse(file, idHeaders, "client");
+  }
+  function b64(bytes) {
+    let s = "";
+    for (let i = 0; i < bytes.length; i += 32768) s += String.fromCharCode.apply(null, bytes.subarray(i, i + 32768));
+    return btoa(s);
+  }
+  async function serve(rawUrl, lang) {
+    let r;
+    try {
+      r = await respond(rawUrl, lang);
+    } catch (err) {
+      r = docPage(`<!doctype html><meta charset="utf-8"><pre>${String(err?.stack || err).replace(/</g, "&lt;")}</pre>`, 500);
+    }
+    const headers = {};
+    r.headers.forEach((v, k) => {
+      headers[k] = v;
+    });
+    const body = new Uint8Array(await r.arrayBuffer());
+    return { status: r.status, headers, body: b64(body) };
+  }
+  async function normalize(raw, lang) {
+    const locale = pickLocale(lang);
+    const text = String(raw ?? "").replace(/[。．｡]/g, ".").replace(/＃/g, "#").replace(/＠/g, "@").replace(/／/g, "/").replace(/：/g, ":").replace(/[０-９ａ-ｚＡ-Ｚ]/g, (c) => String.fromCharCode(c.charCodeAt(0) - 65248));
+    try {
+      const p = parseInput(text);
+      if (p.kind === "name") return { ok: true, name: formatName(p.tokenId, p.cpu, "tape", p.area), path: p.path };
+      await boot();
+      const res = await kernel.resolve(text);
+      if (!res.name) return { ok: false, message: statusTextOf(locale)(res.status) };
+      return { ok: true, name: res.name, path: p.path };
+    } catch (err) {
+      return { ok: false, message: errorText(err, locale) };
+    }
+  }
+  var bridge = (fn) => async (id, ...args) => {
+    let out;
+    try {
+      out = await fn(...args);
+    } catch (err) {
+      out = { ok: false, message: String(err?.message || err) };
+    }
+    globalThis.TapekitBridge.done(id, JSON.stringify(out));
+  };
+  globalThis.tapekit = { serve, normalize, setBlocklist, refresh, serveTo: bridge(serve), normalizeTo: bridge(normalize), version: "ebf861b" };
+  boot().catch(() => {
+  });
+  globalThis.TapekitBridge?.ready?.();
+})();
+
+</script>

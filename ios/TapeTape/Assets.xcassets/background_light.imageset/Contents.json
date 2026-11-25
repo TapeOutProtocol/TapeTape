@@ -1,0 +1,14 @@
+{
+  "images" : [
+    {
+      "filename" : "background_hd.jpg",
+      "idiom" : "universal"
+    },
+    {
+      "appearances" : [ { "appearance" : "luminosity", "value" : "dark" } ],
+      "filename" : "background_hd_dark.jpg",
+      "idiom" : "universal"
+    }
+  ],
+  "info" : { "author" : "xcode", "version" : 1 }
+}

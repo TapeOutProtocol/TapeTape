@@ -1,0 +1,5 @@
+NSCameraUsageDescription = "TapeTape 需要使用相機，用於在聊天中拍照、錄影以及掃描邀請 QR 碼。";
+NSMicrophoneUsageDescription = "TapeTape 需要使用麥克風，用於錄製語音訊息和影片聲音。";
+NSFaceIDUsageDescription = "TapeTape 在顯示助記詞或匯出備份前，會用 Face ID 確認是你本人。";
+NSPhotoLibraryAddUsageDescription = "TapeTape 會把你選擇儲存的照片和影片存入相簿。";
+NSPhotoLibraryUsageDescription = "TapeTape 需要存取相簿，讓你挑選要傳送的照片和影片。";

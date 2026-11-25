@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>红包合约部署台</title>
+<style>
+:root {
+  --bg: #f6f7f9; --card: #ffffff; --text: #16181d; --muted: #6b7280; --line: #e5e7eb;
+  --accent: #172d54; --accent-text: #ffffff; --ok: #0f7b45; --warn: #a15c00; --bad: #b42318;
+  --ok-bg: #e8f6ee; --warn-bg: #fff4e0; --bad-bg: #fdecea; --code: #f1f3f6;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1115; --card: #171a21; --text: #e7e9ee; --muted: #9aa1ad; --line: #2a2f3a;
+    --accent: #8fb0ff; --accent-text: #0f1115; --ok: #4cc38a; --warn: #f0b354; --bad: #ff7b72;
+    --ok-bg: #12261c; --warn-bg: #2b2112; --bad-bg: #2d1514; --code: #20242d;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1115; --card: #171a21; --text: #e7e9ee; --muted: #9aa1ad; --line: #2a2f3a;
+  --accent: #8fb0ff; --accent-text: #0f1115; --ok: #4cc38a; --warn: #f0b354; --bad: #ff7b72;
+  --ok-bg: #12261c; --warn-bg: #2b2112; --bad-bg: #2d1514; --code: #20242d;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.6 -apple-system, "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", sans-serif; }
+main { max-width: 860px; margin: 0 auto; padding: 24px 16px 80px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+h2 { font-size: 17px; margin: 0 0 12px; display: flex; gap: 10px; align-items: center; }
+.step { display: inline-flex; width: 24px; height: 24px; border-radius: 12px; background: var(--accent); color: var(--accent-text); font-size: 13px; align-items: center; justify-content: center; flex: none; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 18px; margin: 0 0 14px; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin: 8px 0; }
+label { color: var(--muted); font-size: 13px; display: block; margin: 10px 0 4px; }
+input, select { width: 100%; padding: 9px 10px; border: 1px solid var(--line); border-radius: 7px; background: var(--bg); color: var(--text); font: inherit; }
+input.mono, .mono { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+button { padding: 9px 16px; border-radius: 7px; border: 1px solid var(--accent); background: var(--accent); color: var(--accent-text); font: inherit; cursor: pointer; }
+button.ghost { background: transparent; color: var(--accent); }
+button:disabled { opacity: .45; cursor: not-allowed; }
+.pill { padding: 2px 9px; border-radius: 99px; font-size: 12px; border: 1px solid var(--line); color: var(--muted); }
+.msg { padding: 10px 12px; border-radius: 7px; margin: 10px 0 0; white-space: pre-wrap; word-break: break-all; }
+.msg.ok { background: var(--ok-bg); color: var(--ok); }
+.msg.warn { background: var(--warn-bg); color: var(--warn); }
+.msg.bad { background: var(--bad-bg); color: var(--bad); }
+.msg.info { background: var(--code); color: var(--text); }
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+td, th { text-align: left; padding: 7px 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { color: var(--muted); font-weight: normal; font-size: 13px; }
+td.mono { word-break: break-all; }
+.good { color: var(--ok); } .badc { color: var(--bad); } .warnc { color: var(--warn); }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; }
+@media (max-width: 600px) { .grid2 { grid-template-columns: 1fr; } }
+pre { background: var(--code); padding: 12px; border-radius: 7px; overflow-x: auto; font-size: 12.5px; margin: 10px 0 0; white-space: pre-wrap; word-break: break-all; }
+details summary { cursor: pointer; color: var(--muted); }
+</style>
+</head>
+<body>
+<main>
+  <h1>红包合约部署台</h1>
+  <p class="sub">TapeTapeRedPacket · 用你自己的钱包在 BSC 或 X Layer 上部署新红包合约，并完成核对、参数设置和源码公开验证。每一笔交易都要在钱包里确认，本页不保存、不接触私钥。</p>
+
+  <div class="card">
+    <h2>合约文件</h2>
+    <table id="buildInfo"></table>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">1</span>连接钱包</h2>
+    <div class="row" id="wallets"><span class="pill">正在查找浏览器里的钱包…</span></div>
+    <div id="walletMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">2</span>选择链</h2>
+    <div class="row" id="chains"></div>
+    <div id="chainMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">3</span>部署</h2>
+    <div class="grid2">
+      <div>
+        <label for="owner">合约主人地址（只有它能改手续费、设最小金额、提手续费）</label>
+        <input id="owner" class="mono" placeholder="0x…">
+      </div>
+      <div>
+        <label for="fee">初始手续费（千分比，0–50；5 = 0.5%）</label>
+        <input id="fee" type="number" min="0" max="50" step="1">
+      </div>
+    </div>
+    <div class="row" style="margin-top:14px">
+      <button id="estimateBtn" class="ghost">预估费用</button>
+      <button id="deployBtn">部署合约</button>
+    </div>
+    <div id="deployMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">4</span>核对链上合约</h2>
+    <label for="addr">合约地址（部署后自动填上；也可以填一个已部署的地址来核对和管理）</label>
+    <div class="row" style="flex-wrap:nowrap">
+      <input id="addr" class="mono" placeholder="0x…">
+      <button id="checkBtn" style="flex:none">核对</button>
+    </div>
+    <div id="checkMsg"></div>
+    <table id="checkTable" style="margin-top:10px"></table>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">5</span>每种代币的最小金额</h2>
+    <p class="sub" style="margin:0 0 6px">按代币各设一个最小发送金额（含手续费前的总额）。留空或 0 表示不限，只要求每份至少 1 个最小单位。需要主人钱包签名，每个代币一笔交易。</p>
+    <table id="minTable"></table>
+    <div id="minMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">6</span>源码公开验证</h2>
+    <p class="sub" style="margin:0 0 6px">把合约源码提交到 Sourcify（公开的源码验证平台），任何人都能核对链上代码确实由这份源码编译而来。不需要签名、不花钱。</p>
+    <div class="row"><button id="verifyBtn">提交验证</button></div>
+    <div id="verifyMsg"></div>
+  </div>
+
+  <div class="card">
+    <h2><span class="step">7</span>把结果发给开发</h2>
+    <p class="sub" style="margin:0 0 6px">两条链都部署完后，把下面这段复制给开发，客户端会改成读取这些地址。</p>
+    <pre id="summary">（还没有部署记录）</pre>
+    <div class="row"><button id="copyBtn" class="ghost">复制</button><button id="clearBtn" class="ghost">清空记录</button></div>
+  </div>
+
+  <div class="card">
+    <h2>主人管理</h2>
+    <details>
+      <summary>改手续费、提手续费、转移主人（平时不用）</summary>
+      <div class="grid2">
+        <div>
+          <label for="newFee">新手续费（千分比，0–50）</label>
+          <div class="row" style="flex-wrap:nowrap"><input id="newFee" type="number" min="0" max="50"><button id="setFeeBtn" style="flex:none">修改</button></div>
+        </div>
+        <div>
+          <label for="wdToken">提手续费：代币</label>
+          <select id="wdToken"></select>
+          <label for="wdTo">收款地址</label>
+          <div class="row" style="flex-wrap:nowrap"><input id="wdTo" class="mono" placeholder="0x…"><button id="wdBtn" style="flex:none">提取</button></div>
+        </div>
+        <div>
+          <label for="newOwner">转移主人：新主人地址（之后要新主人在本页点「接受」）</label>
+          <div class="row" style="flex-wrap:nowrap"><input id="newOwner" class="mono" placeholder="0x…"><button id="xferBtn" style="flex:none">发起</button></div>
+        </div>
+        <div>
+          <label>新主人接受</label>
+          <div class="row"><button id="acceptBtn" class="ghost">我是新主人，接受</button></div>
+        </div>
+      </div>
+      <div id="adminMsg"></div>
+    </details>
+  </div>
+</main>
+
+<script src="artifact.js"></script>
+<script>
+"use strict";
+const A = window.TAPETAPE_ARTIFACT;
+const ZERO = "0x0000000000000000000000000000000000000000";
+const CHAINS = {
+  56: {
+    name: "BNB Smart Chain", short: "BSC", native: "BNB", defaultFee: 10,
+    explorer: "https://bscscan.com",
+    add: { chainId: "0x38", chainName: "BNB Smart Chain", nativeCurrency: { name: "BNB", symbol: "BNB", decimals: 18 }, rpcUrls: ["https://bsc-dataseed.bnbchain.org"], blockExplorerUrls: ["https://bscscan.com"] },
+    tokens: [
+      { symbol: "BNB", address: ZERO, decimals: 18 },
+      { symbol: "BEM", address: "0x5ce033B2bFCa3Af30b3e8C8457DeaF776A8b695a", decimals: 8 },
+      { symbol: "USDT", address: "0x55d398326f99059fF775485246999027B3197955", decimals: 18 },
+    ],
+  },
+  196: {
+    name: "X Layer", short: "X Layer", native: "OKB", defaultFee: 10,
+    explorer: "https://www.oklink.com/xlayer",
+    add: { chainId: "0xc4", chainName: "X Layer Mainnet", nativeCurrency: { name: "OKB", symbol: "OKB", decimals: 18 }, rpcUrls: ["https://rpc.xlayer.tech"], blockExplorerUrls: ["https://www.oklink.com/xlayer"] },
+    tokens: [
+      { symbol: "OKB", address: ZERO, decimals: 18 },
+      { symbol: "BEM", address: "0x60e62efa9405d6873c5deabd4e6cc91c25363952", decimals: 8 },
+    ],
+  },
+};
+
+let provider = null, account = null, chainId = null, selected = null;
+const $ = (id) => document.getElementById(id);
+
+function show(el, kind, text) { $(el).innerHTML = text ? `<div class="msg ${kind}"></div>` : ""; if (text) $(el).firstChild.textContent = text; }
+function esc(s) { return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c])); }
+function short(a) { return a ? a.slice(0, 6) + "…" + a.slice(-4) : ""; }
+function errText(e) {
+  if (!e) return "未知错误";
+  if (e.code === 4001) return "你在钱包里取消了。";
+  return (e.data && e.data.message) || e.message || String(e);
+}
+
+// ---------- ABI ----------
+const isAddr = (a) => /^0x[0-9a-fA-F]{40}$/.test(a || "");
+const word = (hex) => hex.replace(/^0x/, "").padStart(64, "0");
+const encAddr = (a) => { if (!isAddr(a)) throw new Error("地址格式不对：" + a); return word(a.toLowerCase()); };
+const encUint = (n) => { n = BigInt(n); if (n < 0n) throw new Error("不能为负"); return n.toString(16).padStart(64, "0"); };
+function sel(sig) { const s = A.selectors[sig]; if (!s) throw new Error("未知函数 " + sig); return "0x" + s; }
+const calldata = (sig, ...words) => sel(sig) + words.join("");
+const decUint = (hex, i = 0) => BigInt("0x" + (hex.slice(2 + 64 * i, 2 + 64 * (i + 1)) || "0"));
+const decAddr = (hex, i = 0) => "0x" + hex.slice(2 + 64 * i + 24, 2 + 64 * (i + 1));
+function parseUnits(s, dec) {
+  s = String(s).trim(); if (s === "") return 0n;
+  if (!/^\d+(\.\d+)?$/.test(s)) throw new Error("金额格式不对：" + s);
+  const [i, f = ""] = s.split(".");
+  if (f.length > dec) throw new Error(`小数位超过代币精度（${dec} 位）：${s}`);
+  return BigInt(i) * 10n ** BigInt(dec) + BigInt((f + "0".repeat(dec)).slice(0, dec) || "0");
+}
+function formatUnits(v, dec) {
+  v = BigInt(v); const b = 10n ** BigInt(dec); const i = v / b; let f = (v % b).toString().padStart(dec, "0").replace(/0+$/, "");
+  return f ? `${i}.${f}` : `${i}`;
+}
+
+// keccak256（只用来做地址大小写校验，EIP-55）
+const KECCAK_RC = [1n,0x8082n,0x800000000000808an,0x8000000080008000n,0x808bn,0x80000001n,0x8000000080008081n,0x8000000000008009n,0x8an,0x88n,0x80008009n,0x8000000an,0x8000808bn,0x800000000000008bn,0x8000000000008089n,0x8000000000008003n,0x8000000000008002n,0x8000000000000080n,0x800an,0x800000008000000an,0x8000000080008081n,0x8000000000008080n,0x80000001n,0x8000000080008008n];
+const KECCAK_ROT = [0,1,62,28,27,36,44,6,55,20,3,10,43,25,39,41,45,15,21,8,18,2,61,56,14];
+function keccak256(bytes) {
+  const M = (1n << 64n) - 1n, rot = (x, n) => n === 0 ? x : ((x << BigInt(n)) | (x >> BigInt(64 - n))) & M;
+  const rate = 136, msg = [...bytes, 0x01]; while (msg.length % rate) msg.push(0); msg[msg.length - 1] |= 0x80;
+  const st = new Array(25).fill(0n);
+  for (let off = 0; off < msg.length; off += rate) {
+    for (let i = 0; i < rate / 8; i++) { let v = 0n; for (let b = 7; b >= 0; b--) v = (v << 8n) | BigInt(msg[off + i * 8 + b]); st[i] ^= v; }
+    for (let r = 0; r < 24; r++) {
+      const C = [0,1,2,3,4].map((x) => st[x] ^ st[x + 5] ^ st[x + 10] ^ st[x + 15] ^ st[x + 20]);
+      for (let x = 0; x < 5; x++) { const d = C[(x + 4) % 5] ^ rot(C[(x + 1) % 5], 1); for (let y = 0; y < 25; y += 5) st[x + y] ^= d; }
+      const B = new Array(25);
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) B[y + 5 * ((2 * x + 3 * y) % 5)] = rot(st[x + 5 * y], KECCAK_ROT[x + 5 * y]);
+      for (let x = 0; x < 5; x++) for (let y = 0; y < 5; y++) st[x + 5 * y] = B[x + 5 * y] ^ ((~B[(x + 1) % 5 + 5 * y] & M) & B[(x + 2) % 5 + 5 * y]);
+      st[0] ^= KECCAK_RC[r];
+    }
+  }
+  let out = ""; for (let i = 0; i < 4; i++) for (let b = 0; b < 8; b++) out += Number((st[i] >> BigInt(8 * b)) & 0xffn).toString(16).padStart(2, "0");
+  return out;
+}
+// 全小写或全大写不带校验，放行；大小写混合的必须符合 EIP-55。
+function checksumOk(a) {
+  const h = a.slice(2); if (h === h.toLowerCase() || h === h.toUpperCase()) return true;
+  const k = keccak256(new TextEncoder().encode(h.toLowerCase()));
+  for (let i = 0; i < 40; i++) { const c = h[i]; if (/[a-f]/i.test(c) && ((parseInt(k[i], 16) >= 8) !== (c === c.toUpperCase()))) return false; }
+  return true;
+}
+
+// ---------- 钱包 ----------
+async function rpc(method, params = []) { return provider.request({ method, params }); }
+async function call(to, data) { return rpc("eth_call", [{ to, data }, "latest"]); }
+
+const found = [];
+window.addEventListener("eip6963:announceProvider", (ev) => { found.push(ev.detail); renderWallets(); });
+function renderWallets() {
+  const box = $("wallets"); box.innerHTML = "";
+  const list = found.length ? found : (window.ethereum ? [{ info: { name: "浏览器钱包", uuid: "legacy" }, provider: window.ethereum }] : []);
+  if (!list.length) { box.innerHTML = '<span class="pill">没找到钱包。请在装了 OKX 钱包或 MetaMask 的 Chrome 里打开本页（要用 http://localhost 打开，不要直接双击文件）。</span>'; return; }
+  for (const w of list) {
+    const b = document.createElement("button"); b.className = "ghost"; b.textContent = "连接 " + w.info.name;
+    b.onclick = () => connect(w.provider, w.info.name); box.appendChild(b);
+  }
+}
+async function connect(p, name) {
+  try {
+    provider = p;
+    const accs = await rpc("eth_requestAccounts");
+    account = accs[0];
+    chainId = Number(await rpc("eth_chainId"));
+    if (!p.__tapetapeHooked && p.on) {
+      p.__tapetapeHooked = true;
+      // 只理会当前连接的这个钱包发来的事件（换过钱包后，旧钱包的事件不算数）。
+      p.on("accountsChanged", (a) => { if (p !== provider) return; account = a[0]; refresh(); });
+      p.on("chainChanged", (c) => { if (p !== provider) return; chainId = Number(c); refresh(); });
+    }
+    if (!$("owner").value) $("owner").value = account;
+    if (!$("wdTo").value) $("wdTo").value = account;
+    await refresh();
+    show("walletMsg", "ok", `已连接 ${name}：${account}`);
+  } catch (e) { show("walletMsg", "bad", "连接失败：" + errText(e)); }
+}
+
+function renderChains() {
+  const box = $("chains"); box.innerHTML = "";
+  for (const id of [56, 196]) {
+    const b = document.createElement("button"); b.className = selected === id ? "" : "ghost";
+    b.textContent = CHAINS[id].name; b.onclick = () => pickChain(id); box.appendChild(b);
+  }
+}
+async function pickChain(id) {
+  selected = id; renderChains();
+  $("fee").value = CHAINS[id].defaultFee;
+  const saved = records()[id]; $("addr").value = saved ? saved.address : "";
+  renderMinTable(); renderWdTokens();
+  if (!provider) { show("chainMsg", "warn", "先在第 1 步连接钱包。"); return; }
+  if (chainId !== id) {
+    try { await rpc("wallet_switchEthereumChain", [{ chainId: CHAINS[id].add.chainId }]); }
+    catch (e) {
+      if (e.code === 4902) { try { await rpc("wallet_addEthereumChain", [CHAINS[id].add]); } catch (e2) { show("chainMsg", "bad", "添加链失败：" + errText(e2)); return; } }
+      else { show("chainMsg", "bad", "切换链失败：" + errText(e)); return; }
+    }
+    chainId = Number(await rpc("eth_chainId"));
+  }
+  await refresh();
+  if (isAddr($("addr").value)) check();
+}
+async function refresh() {
+  renderChains();
+  if (!provider || !selected) return;
+  if (chainId !== selected) { show("chainMsg", "warn", `钱包当前在链 ${chainId}，不是 ${CHAINS[selected].name}（${selected}）。再点一次上面的按钮切换。`); return; }
+  const bal = BigInt(await rpc("eth_getBalance", [account, "latest"]));
+  show("chainMsg", "ok", `当前链：${CHAINS[selected].name}（${selected}）　账户 ${short(account)} 余额 ${formatUnits(bal, 18)} ${CHAINS[selected].native}`);
+}
+function ready(el) {
+  if (!provider || !account) { show(el, "warn", "先在第 1 步连接钱包。"); return false; }
+  if (!selected) { show(el, "warn", "先在第 2 步选择链。"); return false; }
+  if (chainId !== selected) { show(el, "warn", `钱包不在 ${CHAINS[selected].name} 上，先在第 2 步切换。`); return false; }
+  return true;
+}
+
+async function waitReceipt(hash, el, label) {
+  for (let i = 0; i < 180; i++) {
+    const r = await rpc("eth_getTransactionReceipt", [hash]);
+    if (r) { if (r.status !== "0x1") throw new Error(`${label}交易失败（已上链但执行回退）：${hash}`); return r; }
+    show(el, "info", `${label}已发出，等待上链…（${i * 2} 秒）\n交易：${hash}`);
+    await new Promise((s) => setTimeout(s, 2000));
+  }
+  throw new Error("等了 6 分钟还没看到这笔交易上链。如果你在钱包里点过「加速」或「替换」，交易编号会变。\n请先到区块浏览器查一下你钱包地址最近的交易，确认没有部署成功之前，不要再点部署，以免部署两份。\n原交易：" + hash);
+}
+const ERR_TEXT = {
+  "OwnableUnauthorizedAccount(address)": "当前钱包不是合约主人。",
+  "OwnableInvalidOwner(address)": "主人地址无效。",
+  "FeeRateTooHigh()": "手续费超过上限（50‰）。",
+  "NothingToWithdraw()": "这个代币没有可提的手续费。",
+  "InvalidRecipient()": "收款地址无效。",
+  "RenounceDisabled()": "本合约不允许放弃主人。",
+};
+function revertText(e) {
+  const raw = (e && e.data && (typeof e.data === "string" ? e.data : e.data.data)) || "";
+  const m = /0x[0-9a-fA-F]{8}/.exec(raw);
+  if (m) {
+    const sig = Object.keys(A.errors || {}).find((k) => "0x" + A.errors[k] === m[0].toLowerCase());
+    if (sig) return ERR_TEXT[sig] || sig;
+  }
+  return errText(e);
+}
+// 发交易前当场问钱包现在在哪条链、哪个账户，不信页面里记着的值。
+async function liveCheck() {
+  const [c, accs] = await Promise.all([rpc("eth_chainId"), rpc("eth_accounts")]);
+  chainId = Number(c);
+  if (chainId !== selected) throw new Error(`钱包现在在链 ${chainId}，不是你选的 ${CHAINS[selected].name}（${selected}）。请在第 2 步重新切换，没有发出交易。`);
+  if (!accs.length || accs[0].toLowerCase() !== account.toLowerCase()) throw new Error("钱包当前账户和页面显示的不一致，请在第 1 步重新连接，没有发出交易。");
+}
+async function send(to, data, el, label) {
+  if (!ready(el)) throw new Error("not ready");
+  await liveCheck();
+  // 不带 chainId 字段（OKX 钱包在 X Layer 上会因此估算失败）；链由发送前、上链后两次当场核对保证。
+  const tx = { from: account, data }; if (to) tx.to = to;
+  // 先试运行：会失败的交易不弹钱包，直接说原因。
+  try { await rpc("eth_call", [tx, "latest"]); }
+  catch (e) { throw new Error(`「${label}」试运行失败，没有发出交易：${revertText(e)}`); }
+  // 页面自己估算燃料并留 25% 余量直接交给钱包，避免钱包内部估算失败（OKX 钱包在 X Layer 部署合约时会出现）。
+  // 估算也失败时用固定上限：部署实测约 195 万，管理操作都在 10 万以内。多出的燃料不会被扣。
+  try { tx.gas = "0x" + (BigInt(await rpc("eth_estimateGas", [tx])) * 125n / 100n).toString(16); }
+  catch { tx.gas = "0x" + (to ? 300000 : 2600000).toString(16); }
+  show(el, "info", `请在钱包里确认「${label}」…`);
+  const hash = await rpc("eth_sendTransaction", [tx]);
+  const r = await waitReceipt(hash, el, label);
+  const after = Number(await rpc("eth_chainId"));
+  if (after !== selected) throw new Error(`交易已上链，但钱包现在在链 ${after}，无法确认它在 ${CHAINS[selected].name} 上。请到区块浏览器核对：${hash}`);
+  return r;
+}
+
+// ---------- 部署 ----------
+function deployData() {
+  const owner = $("owner").value.trim();
+  if (!isAddr(owner)) throw new Error("主人地址格式不对。");
+  if (!checksumOk(owner)) throw new Error("主人地址的大小写校验不通过，可能抄错了一位。请重新复制，或全部改成小写。");
+  if ($("fee").value.trim() === "") throw new Error("手续费不能留空，不收就填 0。");
+  const fee = Number($("fee").value);
+  if (!Number.isInteger(fee) || fee < 0 || fee > 50) throw new Error("手续费要是 0–50 的整数。");
+  return { owner, fee, data: A.bytecode + encAddr(owner) + encUint(fee) };
+}
+$("estimateBtn").onclick = async () => {
+  try {
+    if (!ready("deployMsg")) return;
+    const { data } = deployData();
+    const [gas, price, bal] = await Promise.all([
+      rpc("eth_estimateGas", [{ from: account, data }]), rpc("eth_gasPrice"), rpc("eth_getBalance", [account, "latest"]),
+    ]);
+    const cost = BigInt(gas) * BigInt(price);
+    show("deployMsg", cost > BigInt(bal) ? "bad" : "ok",
+      `预计用 ${BigInt(gas)} gas，按当前价格约 ${formatUnits(cost, 18)} ${CHAINS[selected].native}（钱包里显示的为准）。` +
+      (cost > BigInt(bal) ? "\n余额不够。" : ""));
+  } catch (e) { show("deployMsg", "bad", "预估失败：" + errText(e)); }
+};
+$("deployBtn").onclick = async () => {
+  let d;
+  try { d = deployData(); } catch (e) { show("deployMsg", "bad", e.message); return; }
+  if (!ready("deployMsg")) return;
+  if (account && d.owner.toLowerCase() !== account.toLowerCase() &&
+      !confirm(`注意：主人地址 ${d.owner}\n不是当前钱包 ${account}。\n\n部署后只有主人地址能改手续费、提手续费。确认这个地址是你自己的？`)) return;
+  if (!confirm(`将在 ${CHAINS[selected].name} 上部署红包合约：\n\n主人：${d.owner}\n手续费：${d.fee}‰（${d.fee / 10}%）\n\n合约不可升级，主人地址部署后只能用「转移主人」改。确定？`)) return;
+  $("deployBtn").disabled = true;
+  try {
+    const r = await send(null, d.data, "deployMsg", "部署");
+    const address = r.contractAddress;
+    saveRecord(selected, { address, tx: r.transactionHash, owner: d.owner, fee: d.fee, block: Number(r.blockNumber) });
+    $("addr").value = address;
+    show("deployMsg", "ok", `部署成功。\n合约地址：${address}\n交易：${r.transactionHash}\n下一步会自动核对。`);
+    await check();
+  } catch (e) { if (e.message !== "not ready") show("deployMsg", "bad", "部署失败：" + errText(e)); }
+  finally { $("deployBtn").disabled = false; }
+};
+
+// ---------- 核对 ----------
+function target(el) {
+  const a = $("addr").value.trim();
+  if (!isAddr(a)) { show(el, "warn", "第 4 步的合约地址格式不对。"); return null; }
+  return a;
+}
+async function check() {
+  if (!ready("checkMsg")) return;
+  const a = target("checkMsg"); if (!a) return;
+  $("checkTable").innerHTML = "";
+  try {
+    const code = await rpc("eth_getCode", [a, "latest"]);
+    const same = code.toLowerCase() === A.deployedBytecode.toLowerCase();
+    let o = null;
+    const rows = [["链上代码", same ?'<span class="good">与本页这份源码编译结果逐字节一致</span>' : (code === "0x" ? '<span class="badc">这个地址没有合约</span>' : '<span class="badc">与本页源码不一致，不是这份合约</span>')]];
+    if (same) {
+      const [owner, pending, fee, maxFee] = await Promise.all([
+        call(a, calldata("owner()")), call(a, calldata("pendingOwner()")), call(a, calldata("feeRate()")), call(a, calldata("MAX_FEE_RATE()")),
+      ]);
+      o = decAddr(owner); const po = decAddr(pending);
+      rows.push(["主人", `<span class="mono">${esc(o)}</span>${o.toLowerCase() === (account || "").toLowerCase() ? ' <span class="pill">就是当前钱包</span>' : ""}`]);
+      if (po !== ZERO) rows.push(["待接受的新主人", `<span class="mono warnc">${esc(po)}</span>`]);
+      rows.push(["手续费", `${decUint(fee)}‰（${Number(decUint(fee)) / 10}%），上限 ${decUint(maxFee)}‰`]);
+      for (const t of CHAINS[selected].tokens) {
+        const [m, f] = await Promise.all([call(a, calldata("minAmount(address)", encAddr(t.address))), call(a, calldata("collectedFees(address)", encAddr(t.address)))]);
+        rows.push([`${t.symbol}`, `最小金额 ${formatUnits(decUint(m), t.decimals)}　已收手续费 ${formatUnits(decUint(f), t.decimals)}`]);
+      }
+      if (!records()[selected] || records()[selected].address.toLowerCase() !== a.toLowerCase()) {
+        rows.push(["记录", '<span class="pill">这个地址不在本页的部署记录里</span> <button class="ghost" id="adoptBtn">记为本链的正式地址</button>']);
+      }
+    }
+    $("checkTable").innerHTML = rows.map(([k, v]) => `<tr><th style="width:150px">${esc(k)}</th><td>${v}</td></tr>`).join("");
+    if ($("adoptBtn")) $("adoptBtn").onclick = () => {
+      if (!o || o.toLowerCase() !== (account || "").toLowerCase()) {
+        show("checkMsg", "bad", `这份合约的主人是 ${o}，不是当前钱包，不能记为正式地址。可能是别人用同一份代码部署的。`);
+        return;
+      }
+      saveRecord(selected, { address: a, tx: "", owner: o, fee: null }); check();
+    };
+    show("checkMsg", same ? "ok" : "bad", same ? `${CHAINS[selected].name} 上的 ${a} 核对通过。` : "核对不通过，不要使用这个地址。");
+    renderMinTable(a);
+  } catch (e) { show("checkMsg", "bad", "核对失败：" + errText(e)); }
+}
+$("checkBtn").onclick = check;
+
+// ---------- 最小金额 ----------
+async function renderMinTable(addr) {
+  if (!selected) { $("minTable").innerHTML = '<tr><td class="sub">先选择链。</td></tr>'; return; }
+  $("minTable").innerHTML = "<tr><th>代币</th><th>当前</th><th>新的最小金额</th><th></th></tr>" + CHAINS[selected].tokens.map((t, i) =>
+    `<tr><td>${t.symbol}<div class="mono sub" style="margin:0">${t.address === ZERO ? "原生币" : short(t.address)} · ${t.decimals} 位精度</div></td>` +
+    `<td id="minCur${i}">—</td><td><input id="minNew${i}" placeholder="例如 0.01"></td><td><button id="minBtn${i}" class="ghost">设置</button></td></tr>`).join("");
+  CHAINS[selected].tokens.forEach((t, i) => { $("minBtn" + i).onclick = () => setMin(t, i); });
+  if (addr && provider && chainId === selected) {
+    for (const [i, t] of CHAINS[selected].tokens.entries()) {
+      try { $("minCur" + i).textContent = formatUnits(decUint(await call(addr, calldata("minAmount(address)", encAddr(t.address)))), t.decimals); } catch {}
+    }
+  }
+}
+async function setMin(t, i) {
+  try {
+    const a = target("minMsg"); if (!a || !ready("minMsg")) return;
+    const v = parseUnits($("minNew" + i).value, t.decimals);
+    if (!confirm(`把 ${t.symbol} 的最小金额设为 ${formatUnits(v, t.decimals)} ${t.symbol}？`)) return;
+    await send(a, calldata("setMinAmount(address,uint256)", encAddr(t.address), encUint(v)), "minMsg", `设置 ${t.symbol} 最小金额`);
+    show("minMsg", "ok", `${t.symbol} 最小金额已设为 ${formatUnits(v, t.decimals)}。`);
+    renderMinTable(a);
+  } catch (e) { if (e.message !== "not ready") show("minMsg", "bad", "设置失败：" + errText(e)); }
+}
+
+// ---------- 源码验证 ----------
+$("verifyBtn").onclick = async () => {
+  const a = target("verifyMsg"); if (!a) return;
+  if (!selected) { show("verifyMsg", "warn", "先选择链。"); return; }
+  const rec = records()[selected];
+  const body = { stdJsonInput: A.stdJsonInput, compilerVersion: A.compilerVersion, contractIdentifier: A.contractIdentifier };
+  if (rec && rec.address.toLowerCase() === a.toLowerCase() && rec.tx) body.creationTransactionHash = rec.tx;
+  try {
+    show("verifyMsg", "info", "正在提交到 Sourcify…");
+    const r = await fetch(`https://sourcify.dev/server/v2/verify/${selected}/${a}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) });
+    const j = await r.json();
+    if (r.status === 409) { show("verifyMsg", "ok", "这个地址已经验证过了。\n查看：https://repo.sourcify.dev/" + selected + "/" + a); return; }
+    if (!r.ok) throw new Error(j.message || JSON.stringify(j));
+    for (let i = 0; i < 60; i++) {
+      await new Promise((s) => setTimeout(s, 3000));
+      const s = await (await fetch(`https://sourcify.dev/server/v2/verify/${j.verificationId}`)).json();
+      if (s.isJobCompleted) {
+        if (s.error) throw new Error(s.error.message || JSON.stringify(s.error));
+        show("verifyMsg", "ok", `验证完成：${s.contract && s.contract.match}\n查看：https://repo.sourcify.dev/${selected}/${a}`);
+        return;
+      }
+      show("verifyMsg", "info", `Sourcify 正在编译比对…（${(i + 1) * 3} 秒）`);
+    }
+    throw new Error("等待超时，稍后再点一次。");
+  } catch (e) { show("verifyMsg", "bad", "验证失败：" + errText(e)); }
+};
+
+// ---------- 管理 ----------
+function renderWdTokens() {
+  $("wdToken").innerHTML = selected ? CHAINS[selected].tokens.map((t, i) => `<option value="${i}">${t.symbol}</option>`).join("") : "";
+}
+$("setFeeBtn").onclick = async () => {
+  try {
+    const a = target("adminMsg"); if (!a) return;
+    const f = Number($("newFee").value);
+    if (!Number.isInteger(f) || f < 0 || f > 50) throw new Error("手续费要是 0–50 的整数。");
+    if (!confirm(`把手续费改为 ${f}‰（${f / 10}%）？`)) return;
+    await send(a, calldata("setFeeRate(uint256)", encUint(f)), "adminMsg", "修改手续费");
+    show("adminMsg", "ok", "手续费已修改。"); check();
+  } catch (e) { if (e.message !== "not ready") show("adminMsg", "bad", errText(e)); }
+};
+$("wdBtn").onclick = async () => {
+  try {
+    const a = target("adminMsg"); if (!a || !ready("adminMsg")) return;
+    const t = CHAINS[selected].tokens[Number($("wdToken").value)];
+    const to = $("wdTo").value.trim(); encAddr(to);
+    const amt = decUint(await call(a, calldata("collectedFees(address)", encAddr(t.address))));
+    if (amt === 0n) { show("adminMsg", "warn", `${t.symbol} 没有可提的手续费。`); return; }
+    if (!confirm(`把 ${formatUnits(amt, t.decimals)} ${t.symbol} 手续费提到 ${to}？`)) return;
+    await send(a, calldata("withdrawFees(address,address)", encAddr(t.address), encAddr(to)), "adminMsg", "提取手续费");
+    show("adminMsg", "ok", "已提取。"); check();
+  } catch (e) { if (e.message !== "not ready") show("adminMsg", "bad", errText(e)); }
+};
+$("xferBtn").onclick = async () => {
+  try {
+    const a = target("adminMsg"); if (!a) return;
+    const n = $("newOwner").value.trim(); encAddr(n);
+    if (!confirm(`发起把主人转给 ${n}？\n对方要用这个地址在本页点「接受」才生效。`)) return;
+    await send(a, calldata("transferOwnership(address)", encAddr(n)), "adminMsg", "发起转移主人");
+    show("adminMsg", "ok", "已发起，等新主人接受。"); check();
+  } catch (e) { if (e.message !== "not ready") show("adminMsg", "bad", errText(e)); }
+};
+$("acceptBtn").onclick = async () => {
+  try {
+    const a = target("adminMsg"); if (!a) return;
+    await send(a, calldata("acceptOwnership()"), "adminMsg", "接受主人");
+    show("adminMsg", "ok", "你现在是合约主人。"); check();
+  } catch (e) { if (e.message !== "not ready") show("adminMsg", "bad", errText(e)); }
+};
+
+// ---------- 记录 ----------
+const KEY = "tapetape-redpacket-deployments";
+function records() { try { return JSON.parse(localStorage.getItem(KEY) || "{}"); } catch { return {}; } }
+function saveRecord(id, r) { const all = records(); all[id] = r; try { localStorage.setItem(KEY, JSON.stringify(all)); } catch {} renderSummary(); }
+function renderSummary() {
+  const all = records(); const lines = [];
+  for (const id of [56, 196]) {
+    const r = all[id]; if (!r) continue;
+    lines.push(`${CHAINS[id].name}（${id}）红包合约：${r.address}` + (r.tx ? `\n  部署交易：${r.tx}` : "") + (r.block ? `　区块 ${r.block}` : ""));
+  }
+  if (lines.length) lines.push(`字节码指纹（sha256）：${A.bytecodeSha256}`);
+  $("summary").textContent = lines.length ? lines.join("\n") : "（还没有部署记录）";
+}
+$("copyBtn").onclick = async () => { try { await navigator.clipboard.writeText($("summary").textContent); $("copyBtn").textContent = "已复制"; setTimeout(() => $("copyBtn").textContent = "复制", 1500); } catch {} };
+$("clearBtn").onclick = () => { if (confirm("清空本页保存的部署记录？（不影响链上合约）")) { try { localStorage.removeItem(KEY); } catch {} renderSummary(); } };
+
+// ---------- 启动 ----------
+$("buildInfo").innerHTML = [
+  ["合约", A.contractName],
+  ["编译器", `${A.compilerVersion}，evmVersion ${A.evmVersion}`],
+  ["字节码指纹", `<span class="mono">sha256 ${A.bytecodeSha256}</span>`],
+  ["源码指纹", `<span class="mono">sha256 ${A.sourceSha256}</span>`],
+  ["生成时间", A.builtAt],
+].map(([k, v]) => `<tr><th style="width:150px">${k}</th><td>${v}</td></tr>`).join("");
+renderChains(); renderMinTable(); renderSummary();
+window.dispatchEvent(new Event("eip6963:requestProvider"));
+setTimeout(renderWallets, 600);
+</script>
+</body>
+</html>

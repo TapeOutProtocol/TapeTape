@@ -1,0 +1,30 @@
+#!/bin/bash
+# 把固定短链接 https://tapetape.org/apk 指到一个下载地址。用法：sudo /opt/tapetape-files/set-apk '<地址>'
+#   地址可以是本站直接下载的文件 /download/TapeTape-<版本>.apk（publish-apk 会自动调用），
+#   也可以是 TapeRelay 分享链接 https://www.taperelay.com/f/…（share-file --latest 会自动调用）
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "要用 sudo 运行"; exit 1; }
+link="${1:-}"
+# 只接受这两种地址，且不能含引号、空白、分号等会破坏 nginx 配置的字符
+# 同时生成 https://tapetape.org/apk.json（版本号、大小、指纹），官网的下载按钮读它显示版本号
+info='{}'
+if [[ "$link" =~ ^/download/TapeTape-([0-9]+(\.[0-9]+){1,3})\.apk$ ]]; then
+  ver="${BASH_REMATCH[1]}"
+  file="/var/www/tapetape-download/${link#/download/}"
+  [ -f "$file" ] || { echo "服务器上没有这个文件：$link"; exit 1; }
+  size=$(stat -c %s "$file")
+  sha=$( [ -f "$file.sha256" ] && cut -d' ' -f1 "$file.sha256" || sha256sum "$file" | cut -d' ' -f1 )
+  [[ "$sha" =~ ^[0-9a-f]{64}$ ]] || { echo "指纹格式不对"; exit 1; }
+  info="{\"version\":\"$ver\",\"size\":$size,\"sha256\":\"$sha\",\"url\":\"$link\"}"
+elif ! [[ "$link" =~ ^https://www\.taperelay\.com/f/[A-Za-z0-9._-]+/[0-9a-f]{64}#[A-Za-z0-9_=\&.:,%-]+$ ]]; then
+  echo "不是有效的下载地址（要么 /download/TapeTape-<版本>.apk，要么 TapeRelay 分享链接）"; exit 1
+fi
+conf=/etc/nginx/tapetape-apk.conf
+[ -f "$conf" ] && cp "$conf" "$conf.prev"
+{
+  printf '# 由 set-apk 生成，%s\n' "$(date -u +%FT%TZ)"
+  printf 'location ~ ^/apk/?$ { add_header Cache-Control "no-store" always; return 302 "%s"; }\n' "$link"
+  printf "location = /apk.json { default_type application/json; add_header Cache-Control \"no-cache\" always; add_header Access-Control-Allow-Origin \"*\" always; return 200 '%s'; }\n" "$info"
+} > "$conf"
+if nginx -t 2>/dev/null; then systemctl reload nginx; echo "已更新：https://tapetape.org/apk → $link"
+else [ -f "$conf.prev" ] && mv "$conf.prev" "$conf"; echo "nginx 配置检查没通过，已还原"; exit 1; fi

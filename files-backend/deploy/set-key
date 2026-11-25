@@ -1,0 +1,48 @@
+#!/bin/bash
+# 写入电路的开发者密钥（trk1_…），重启签名后台。密钥不回显、不进命令历史；写入前先核对，不合格不写。
+# 用法：sudo /opt/tapetape-files/set-key            粘贴输入
+#       sudo /opt/tapetape-files/set-key <文件>     从控制台下载的 .env 文件读（读完删掉这个文件）
+#       每日限额（字节）用环境变量 QUOTA 传，例如 sudo QUOTA=2147483648 /opt/tapetape-files/set-key
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "要用 sudo 运行"; exit 1; }
+APP=/opt/tapetape-files/app
+NODE=/opt/tapetape-files/runtime/node
+if [ -n "${1:-}" ]; then
+  [ -f "$1" ] || { echo "找不到文件 $1"; exit 1; }
+  KEY="$(grep -o 'trk1_[A-Za-z0-9_-]*' "$1" | head -1 || true)"
+  shred -u "$1" 2>/dev/null || rm -f "$1"
+  echo "已从文件读取，并删除了服务器上的这个文件"
+else
+  printf '\e[?2004l'   # 关掉终端的「括号粘贴」，免得粘贴时混进控制字符
+  read -rsp "粘贴开发者密钥（trk1_ 开头，输入时不显示），粘贴后直接按回车，不要按方向键：" KEY; echo
+fi
+# 去掉终端控制序列（ESC [ … 字母/~）、括号粘贴标记和所有空白
+KEY="$(printf '%s' "$KEY" | LC_ALL=C sed -E 's/\x1b\[[0-9;?]*[A-Za-z~]//g; s/\x1b//g' | tr -d '[:space:]')"
+case "$KEY" in trk1_*) ;; *) echo "不是 trk1_ 开头，没写入。是不是把 TAPERELAY_KEY= 也一起复制了？只要后面那串。"; exit 1;; esac
+if ! CHECK="$(cd "$APP" && TAPERELAY_KEY="$KEY" "$NODE" --input-type=module -e '
+import { describeDeveloperKey } from "@taperelay/client/src/devkey.mjs";
+try {
+  const d = describeDeveloperKey(process.env.TAPERELAY_KEY);
+  if (d.expires <= Date.now() / 1000) { console.log("这把密钥已经过期"); process.exit(1); }
+  if (!d.scopes.includes("objects")) { console.log("这把密钥没有「存文件、读文件」权限"); process.exit(1); }
+  console.log(`电路 ${d.account}，到期 ${new Date(d.expires * 1000).toISOString().slice(0, 10)}，节点 ${d.primary.join(", ")}`);
+} catch (e) { console.log(e.message); process.exit(1); }
+' 2>&1)"; then
+  echo "密钥不对，没写入：$CHECK"
+  echo "请回控制台重新复制完整的一串（或重新生成一把），再运行一次。"
+  unset KEY; exit 1
+fi
+echo "核对通过：$CHECK"
+install -d -m 700 /etc/tapetape-files
+umask 077
+touch /etc/tapetape-files/env
+grep -vE '^(TAPERELAY_KEY|RELAY_DAILY_QUOTA_BYTES)=' /etc/tapetape-files/env > /etc/tapetape-files/env.new || true
+grep -E '^RELAY_DAILY_QUOTA_BYTES=' /etc/tapetape-files/env >> /etc/tapetape-files/env.new || true
+if [ -n "${QUOTA:-}" ]; then sed -i '/^RELAY_DAILY_QUOTA_BYTES=/d' /etc/tapetape-files/env.new; printf 'RELAY_DAILY_QUOTA_BYTES=%s\n' "$QUOTA" >> /etc/tapetape-files/env.new; fi
+printf 'TAPERELAY_KEY=%s\n' "$KEY" >> /etc/tapetape-files/env.new
+mv /etc/tapetape-files/env.new /etc/tapetape-files/env
+unset KEY
+systemctl restart tapetape-files
+sleep 1
+echo "签名后台已重启。线上检查（应显示电路名和节点）："
+curl -s http://127.0.0.1:3010/api/relay/sign; echo

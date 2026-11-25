@@ -1,0 +1,5 @@
+NSCameraUsageDescription = "TapeTape uses the camera to take photos and videos for your chats and to scan invite QR codes.";
+NSMicrophoneUsageDescription = "TapeTape uses the microphone to record voice messages and the sound of your videos.";
+NSFaceIDUsageDescription = "TapeTape uses Face ID before showing your recovery phrase or exporting a backup.";
+NSPhotoLibraryAddUsageDescription = "TapeTape saves photos and videos you choose to your photo library.";
+NSPhotoLibraryUsageDescription = "TapeTape lets you pick photos and videos from your library to send.";

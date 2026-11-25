@@ -1,0 +1,25 @@
+[Unit]
+Description=TapeTape large-attachment signing backend (/api/relay/sign)
+After=network.target
+
+[Service]
+DynamicUser=yes
+StateDirectory=tapetape-files
+Environment=HOST=127.0.0.1 PORT=3010 DB_PATH=/var/lib/tapetape-files/quota.db
+EnvironmentFile=-/etc/tapetape-files/env
+ExecStart=/opt/tapetape-files/runtime/node /opt/tapetape-files/app/server.mjs
+Restart=always
+RestartSec=3
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+MemoryMax=512M
+
+[Install]
+WantedBy=multi-user.target

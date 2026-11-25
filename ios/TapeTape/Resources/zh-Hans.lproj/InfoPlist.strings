@@ -1,0 +1,5 @@
+NSCameraUsageDescription = "TapeTape 需要使用相机，用于在聊天中拍照、录像以及扫描邀请二维码。";
+NSMicrophoneUsageDescription = "TapeTape 需要使用麦克风，用于录制语音消息和视频声音。";
+NSFaceIDUsageDescription = "TapeTape 在显示助记词或导出备份前，会用面容 ID 确认是你本人。";
+NSPhotoLibraryAddUsageDescription = "TapeTape 会把你选择保存的照片和视频存入相册。";
+NSPhotoLibraryUsageDescription = "TapeTape 需要访问相册，让你挑选要发送的照片和视频。";

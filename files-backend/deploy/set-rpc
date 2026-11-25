@@ -1,0 +1,31 @@
+#!/bin/bash
+# 设置某条链的自有 RPC 节点（地址里可能带密钥，只存在服务器上，App 看不到）。
+# 用法：sudo /opt/tapetape-files/set-rpc 196        粘贴 X Layer 节点地址
+#       sudo /opt/tapetape-files/set-rpc 56         粘贴 BSC 节点地址
+#       sudo /opt/tapetape-files/set-rpc 196 off    删掉，改回公共节点
+set -euo pipefail
+[ "$(id -u)" = 0 ] || { echo "要用 sudo 运行"; exit 1; }
+CHAIN="${1:-}"
+[[ "$CHAIN" =~ ^[0-9]+$ ]] || { echo "第一个参数是链编号：196（X Layer）或 56（BSC）"; exit 1; }
+install -d -m 700 /etc/tapetape-files
+touch /etc/tapetape-files/env && chmod 600 /etc/tapetape-files/env
+if [ "${2:-}" = off ]; then
+  sed -i "/^RPC_${CHAIN}=/d" /etc/tapetape-files/env
+  systemctl restart tapetape-files; echo "已删除，链 $CHAIN 改回公共节点"; exit 0
+fi
+printf '\e[?2004l'
+read -rsp "粘贴链 $CHAIN 的 RPC 地址（https 开头，输入时不显示），回车：" URL; echo
+URL="$(printf '%s' "$URL" | LC_ALL=C sed -E 's/\x1b\[[0-9;?]*[A-Za-z~]//g; s/\x1b//g' | tr -d '[:space:]')"
+case "$URL" in https://*) ;; *) echo "不是 https 开头，没写入"; exit 1;; esac
+GOT="$(curl -s --max-time 15 -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}' "$URL" | grep -oE '"result":"0x[0-9a-fA-F]+"' | cut -d'"' -f4 || true)"
+[ -n "$GOT" ] || { echo "这个地址连不上或不是 RPC 节点，没写入"; exit 1; }
+[ "$((GOT))" = "$CHAIN" ] || { echo "这个节点是链 $((GOT))，不是 $CHAIN，没写入"; exit 1; }
+umask 077
+grep -v "^RPC_${CHAIN}=" /etc/tapetape-files/env > /etc/tapetape-files/env.new || true
+printf 'RPC_%s=%s\n' "$CHAIN" "$URL" >> /etc/tapetape-files/env.new
+mv /etc/tapetape-files/env.new /etc/tapetape-files/env
+unset URL
+systemctl restart tapetape-files
+sleep 1
+echo "核对通过并已启用：链 $CHAIN 走你的节点。经中转查最新区块："
+curl -s -H 'content-type: application/json' -d '{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}' "http://127.0.0.1:3010/rpc/$CHAIN"; echo
